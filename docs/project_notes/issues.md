@@ -54,11 +54,11 @@ Prioritized fix order for remaining pending issues:
 
 ### SEC-04: Sensitive Data Exposure in Output Files [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: Medium
-- **Component**: `wp-malware-prescan.py` — `read_core_files()`
+- **Component**: `wp-malware-prescan.py` — `read_core_files()`, `scan_sql_dump()`
 - **Description**: `read_core_files()` explicitly reads `wp-config.php`, which typically contains database credentials, auth keys, and salts. This content is written to `prescan-data/core-files.json` in plaintext. `database.json` may also contain user password hashes and email addresses. These output files persist on disk after the scan with no cleanup mechanism.
-- **Mitigation**: Consider redacting known credential patterns from core file output. Add a cleanup step or warning about sensitive data in output files.
+- **Fix**: Added `redact_wp_config()` to replace values of `DB_PASSWORD`, auth keys, and salts with `[REDACTED]` while preserving file structure for malware detection. Added `redact_email()` to partially redact user emails (keeps first char + domain for suspicious domain analysis). Added `sensitive_data_notice` to output metadata warning that files should be treated as confidential. `DB_NAME`, `DB_HOST`, `DB_USER` kept visible for structural analysis.
 
 ### SEC-05: No Resource Limits (File Count/Size) [MEDIUM]
 
