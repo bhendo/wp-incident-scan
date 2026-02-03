@@ -13,6 +13,21 @@ Track work completed on this skill.
 
 ---
 
+## Remediation Order
+
+Prioritized fix order for remaining pending issues:
+
+1. **SEC-05 + SEC-06** — Resource limits & gzip bomb (tackle together)
+2. **SEC-07** — WebSearch query manipulation (plugin slug sanitization)
+3. **SEC-04** — Sensitive data exposure (credential redaction)
+4. **SEC-09** — Command substitution risk (verification task)
+5. **SEC-03** — Backup directory contamination (do before SEC-04 if output paths change; otherwise after)
+6. **SEC-01** — Prompt injection (most complex, do last)
+
+**Notes**: SEC-03 should ideally precede SEC-04 since output location affects cleanup strategy, but SEC-03 has a wider blast radius. If SEC-03 is deferred, SEC-04 can still be done standalone. SEC-05/SEC-06 are grouped because both are resource-limit hardening in the same file.
+
+---
+
 ### SEC-01: Prompt Injection via Scanned Content [HIGH]
 
 - **Status**: Pending
@@ -47,19 +62,19 @@ Track work completed on this skill.
 
 ### SEC-05: No Resource Limits (File Count/Size) [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: Medium
 - **Component**: `wp-malware-prescan.py`
 - **Description**: No limits on total files scanned (a crafted backup with millions of tiny PHP files would run indefinitely, and `rglob()` is called 4+ times). No limit on individual file size (`php_file.read_text()` reads entire files into memory — a single 2GB PHP file would exhaust memory). SQL line-by-line reading is memory-efficient but a single very long line could still be problematic.
-- **Fix**: Add a file size limit before `read_text()` (e.g., skip files > 10MB). Consider a total file count limit or timeout.
+- **Fix**: Added `MAX_FILE_READ_SIZE` (10MB) — files exceeding this are skipped before `read_text()`. Added `MAX_FILE_COUNT` (500K) — scanning stops after this many files in `scan_php_patterns()`, `scan_suspicious_files()`, and `analyze_timestamps()`. Skipped/limit counts are reported in output and stderr.
 
 ### SEC-06: Gzip Bomb Vulnerability [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: Medium
 - **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`
 - **Description**: `scan_sql_dump()` opens `.sql.gz` files with `gzip.open()`. A gzip bomb (small compressed file that decompresses to enormous size) would cause the line-by-line reader to run indefinitely. While it won't exhaust memory all at once due to line-by-line reading, it would cause an extremely long-running process.
-- **Fix**: Track bytes read from gzipped files and abort after a reasonable limit (e.g., 5GB decompressed).
+- **Fix**: Added `MAX_GZIP_DECOMPRESSED_BYTES` (5GB). `scan_sql_dump()` tracks cumulative bytes read from gzipped files and aborts with an error message when the limit is exceeded.
 
 ### SEC-07: WebSearch Query Manipulation via Plugin Names [LOW]
 
