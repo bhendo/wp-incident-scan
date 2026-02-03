@@ -120,36 +120,42 @@ The agent must:
 
 **IMPORTANT**: Your built-in knowledge has a cutoff date and will miss recent CVEs. Every sub-agent in this phase MUST use the WebSearch tool to search for current vulnerability data. Do NOT rely on built-in knowledge alone. Remind each agent to write its full findings to `{backup_root}/scan-results/agent-{N}-{name}.md` and return only a one-line summary.
 
+Before launching vulnerability agents, compile a brief **compromise evidence summary** from the Phase 1-2 agent results. Include:
+- Types of malware found (backdoors, webshells, uploaders, spam, miners, etc.)
+- Suspicious file locations (e.g., PHP in uploads/)
+- Rogue admin accounts or user creation code
+- Injected content types (redirects, SEO spam, iframes, etc.)
+- Estimated compromise date range from timestamps
+
+Pass this summary to every Phase 3 agent so they can correlate CVEs with the observed evidence.
+
 ### Agent 8: WordPress Core CVE Check
 
-Launch a sub-agent that uses WebSearch to look up known CVEs affecting WordPress version {version from pre-scan discovery}. The agent must perform these searches:
-- `"WordPress {version} CVE"` on WPScan, Patchstack, and NVD
-- `"WordPress security release {current year}"` to find the latest release
+Launch a sub-agent that uses WebSearch to look up known CVEs affecting WordPress version {version from pre-scan discovery}. The agent must perform **one** search:
+- `WordPress {version} vulnerabilities CVE site:wpscan.com OR site:patchstack.com`
 
 Report:
 - The current latest WordPress release
 - Whether the installed version is up to date
-- Any known CVEs, with CVSS scores and whether the installed version is affected
+- For each known CVE: ID, CVSS score, **vulnerability type** (RCE, SQLi, XSS, auth bypass, file upload, privilege escalation, etc.), brief description of what it allows, and whether the installed version is affected
+- **Correlation**: flag any CVEs whose vulnerability type matches the compromise evidence (e.g., a file upload CVE when PHP was found in uploads/)
 
-### Agents 9+: Plugin CVE Checks (parallel, one per plugin or batched 3-4 per agent)
+### Agents 9+: Plugin CVE Checks (parallel, batched 3-4 per agent)
 
-For each plugin (or batch of 3-4 small/common plugins), launch a sub-agent that uses WebSearch to find known CVEs and security advisories. Each agent must search for:
-- `"{plugin name} WordPress plugin CVE"`
-- `"{plugin slug} vulnerability {current year}"` to catch recent disclosures
-- `"{plugin slug}" site:wpscan.com OR site:patchstack.com OR site:wordfence.com`
+Batch plugins 3-4 per agent. Each agent receives: plugin name, installed version, slug, and the compromise evidence summary.
 
-Use WebFetch to follow result links to WPScan/Patchstack/Wordfence pages when needed to get version-specific details.
+Each agent performs **one WebSearch per plugin** using:
+- `{plugin slug} WordPress vulnerability CVE site:wpscan.com OR site:patchstack.com`
 
-Each agent receives: plugin name, installed version, and slug. Each agent returns:
+Do NOT perform additional searches or use WebFetch unless the search results contain no useful information for a plugin. The search result snippets typically contain enough detail (CVE IDs, affected versions, CVSS scores) to make a determination.
+
+Each agent returns per plugin:
 
 1. Plugin name and installed version
-2. Known CVEs with CVSS scores
+2. For each known CVE: ID, CVSS score, **vulnerability type and what it allows** (e.g., "Unauthenticated arbitrary file upload allowing PHP execution", "SQL injection in search parameter", "Stored XSS via widget settings")
 3. Affected version ranges
-4. Patched version for each CVE
-5. Status: VULNERABLE or SAFE
-6. Notable incidents (supply chain attacks, zero-days, mass exploitation)
-
-Batch low-risk plugins (3-4 per agent) to reduce agent count. Give high-risk plugins (file managers, code execution plugins, remote management agents, plugins not in wordpress.org repo, abandoned plugins) their own dedicated agent.
+4. Status: VULNERABLE or SAFE
+5. **Likely entry point**: YES/NO -- does this CVE's vulnerability type match the compromise evidence? Explain the connection (e.g., "This file upload CVE could explain the PHP backdoors found in wp-content/uploads/"). This is the most important field for the final report.
 
 ---
 
