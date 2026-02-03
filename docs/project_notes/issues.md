@@ -94,7 +94,7 @@ Prioritized fix order for remaining pending issues:
 
 ### DB-01: Safe-list Filtering Is Per-Line, Not Per-Value [HIGH]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: High
 - **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`, line ~695
 - **Description**: The script tag safe-list check (`elementor|rank.?math|...`) runs against the entire SQL line. In mysqldump's extended INSERT format, a single `INSERT INTO wp_options VALUES (...)` line contains thousands of rows. If any option value on the line mentions a safe-listed plugin name (nearly guaranteed on real sites), ALL script tag matches on that line are silently skipped — including genuinely malicious injections like the `4r4r.js` payload found in the original manual scan.
@@ -102,7 +102,7 @@ Prioritized fix order for remaining pending issues:
 
 ### DB-02: Context Captured From Line Start Instead of Match Position [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: Medium
 - **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`, line ~704
 - **Description**: Match context is `line.strip()[:300]`, which captures the first 300 characters of the SQL line. In extended INSERT format, the malicious content may be tens of thousands of characters into the line. The agent receives a match flagged as "script tag in wp_options" but the context just shows `INSERT INTO wp_options VALUES (1,'siteurl','https://...` — no indication of what the actual payload was or which option it belongs to. This caused the `ihaf_insert_header` injection to be effectively invisible to the analysis agent even if the pattern matched.
@@ -110,7 +110,7 @@ Prioritized fix order for remaining pending issues:
 
 ### DB-03: Missing High-Risk Injection Options From Extraction List [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: Medium
 - **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`, `target_options` set (line ~652)
 - **Description**: The `target_options` set extracts 11 specific options but misses options commonly abused for script injection. The `ihaf_insert_header`/`ihaf_insert_footer` options (WPCode / Insert Headers and Footers plugin) are prime injection targets because they output directly into every page's `<head>` or footer. Other commonly abused options include custom CSS/JS options and tracking code options from various plugins.
