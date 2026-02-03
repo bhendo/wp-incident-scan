@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+
+# Scan output (generated at runtime in backup directories)
+prescan-data/
+scan-results/
+wp-prescan-results.json
+malware-scan-report.md

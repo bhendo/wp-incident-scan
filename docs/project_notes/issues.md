@@ -78,11 +78,11 @@ Prioritized fix order for remaining pending issues:
 
 ### SEC-07: WebSearch Query Manipulation via Plugin Names [LOW]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: Low
-- **Component**: `prompt.md` — Agents 9+
+- **Component**: `wp-malware-prescan.py`, `prompt.md` — Agents 8, 9+
 - **Description**: Agents 9+ construct WebSearch queries using plugin slugs and version numbers extracted from the backup. A malicious backup could include a plugin with a crafted slug/name designed to produce misleading search results or lead to attacker-controlled content when searched.
-- **Mitigation**: Sanitize plugin slugs before using in search queries. Consider limiting slug length and character set.
+- **Fix**: Added `sanitize_slug()`, `sanitize_version()`, and `sanitize_name()` to the pre-scanner. Slugs are restricted to alphanumeric/hyphen/underscore characters and length-limited (100 chars). Versions are validated against a numeric pattern (30 chars max). Names have control characters stripped (200 chars max). Updated `prompt.md` to instruct agents to use only sanitized slugs (never display names) in queries, and to skip plugins with suspicious-looking slugs.
 
 ### SEC-08: Potential ReDoS in Regex Patterns [LOW]
 

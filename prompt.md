@@ -149,7 +149,7 @@ Launch the following agents. Remind each of the 4096 output limit and write-to-f
 **Output file**: `{backup_root}/scan-results/agent-8-wp-core-cves.md`
 
 Instructions for agent (include the WP version and compromise evidence summary in the prompt):
-1. Use WebSearch to look up known CVEs for the installed WordPress version. Suggested query: `WordPress {version} CVE vulnerabilities` — try sites like wpscan.com and patchstack.com but adapt the query if results are sparse
+1. Use WebSearch to look up known CVEs for the installed WordPress version. Suggested query: `WordPress {version} CVE vulnerabilities` — try sites like wpscan.com and patchstack.com but adapt the query if results are sparse. **Query safety**: The version string comes from the backup and has been sanitized by the pre-scanner. If it still looks unusual (not a simple `X.Y.Z` format), use only the numeric portion
 2. Report: the current latest WordPress release, whether the installed version is up to date
 3. For each known CVE: ID, CVSS score, vulnerability type (RCE, SQLi, XSS, auth bypass, file upload, privilege escalation, etc.), brief description
 4. **Correlation**: flag any CVEs whose vulnerability type matches the compromise evidence
@@ -157,12 +157,14 @@ Instructions for agent (include the WP version and compromise evidence summary i
 
 ### Agents 9+: Plugin CVE Checks (parallel, batched 3-4 per agent)
 
-Batch plugins 3-4 per agent. Each agent receives: plugin names, installed versions, slugs, and the compromise evidence summary.
+Batch plugins 3-4 per agent. Each agent receives: plugin slugs, installed versions, and the compromise evidence summary.
 
 **Output file**: `{backup_root}/scan-results/agent-9-plugin-cves-batch-{N}.md`
 
+**Query safety**: Plugin slugs and versions come from the backup and have been sanitized by the pre-scanner (alphanumeric, hyphens, underscores only; length-limited). Before constructing a search query, verify each slug looks like a legitimate WordPress slug (lowercase, hyphen-separated words, e.g., `contact-form-7`). If a slug looks suspicious (random characters, very long, or nonsensical), skip the web search for that plugin and note it as "slug not searchable" in the output.
+
 Instructions for each agent:
-1. Use WebSearch once per plugin to find known CVEs. Suggested query: `{plugin_slug} WordPress plugin vulnerability CVE` — try wpscan.com and patchstack.com but adapt if results are sparse
+1. Use WebSearch once per plugin to find known CVEs. Use ONLY the sanitized slug in queries — never use the display name. Suggested query: `{plugin_slug} WordPress plugin vulnerability CVE` — try wpscan.com and patchstack.com but adapt if results are sparse
 2. Do NOT use WebFetch unless search results contain nothing useful for a plugin
 3. For each plugin report: name, installed version, known CVEs (ID, CVSS, vulnerability type, what it allows), affected version ranges, status (VULNERABLE/SAFE)
 4. **Likely entry point**: YES/NO — does this CVE's vulnerability type match the compromise evidence? Explain the connection. This is the most important field.
