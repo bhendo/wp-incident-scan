@@ -23,7 +23,7 @@ Track work completed on this skill.
 
 ### SEC-02: Symlink Traversal Reads Files Outside Backup [HIGH]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: High
 - **Component**: `wp-malware-prescan.py` — `scan_php_patterns()`, `read_core_files()`, `read_theme_functions()`
 - **Description**: `scan_php_patterns()` resolves symlinks for loop detection but does not verify the resolved path stays within the backup directory. A crafted backup with symlinks pointing to `/etc/shadow`, `~/.ssh/id_rsa`, or `.env` files would cause the pre-scanner to read those files and include their content in JSON output. `scan_suspicious_files()` reports symlinks outside root but other scan functions still follow and read them.
@@ -71,7 +71,7 @@ Track work completed on this skill.
 
 ### SEC-08: Potential ReDoS in Regex Patterns [LOW]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: Low
 - **Component**: `wp-malware-prescan.py` — `PHP_SUSPICIOUS_PATTERNS`
 - **Description**: The pattern `preg_replace_callback\s*\(\s*.*\$` uses `.*` followed by a literal `\$`, which could cause quadratic backtracking on long lines without a `$` character. Impact is limited since lines are processed individually and content is truncated at 200 chars, but crafted input could slow the scanner.
