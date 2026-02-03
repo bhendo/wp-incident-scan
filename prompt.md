@@ -31,9 +31,9 @@ mkdir -p {backup_root}/scan-results
 
 ---
 
-## Phase 2: Filesystem Analysis
+## Phase 2: Filesystem & Log Analysis
 
-Launch the following sub-agents **in parallel** using the Task tool.
+Launch the following sub-agents **in parallel** using the Task tool (Agents 1-5b).
 
 **CRITICAL — output budget**: Every sub-agent MUST follow the output budget rule above. Specifically:
 1. Use the Read tool to load its assigned `prescan-data/*.json` file
@@ -120,6 +120,39 @@ Instructions for agent:
 |------------|-------|----------------|--------------|
 ```
 
+### Agent 5b: Error Log Analysis
+
+**Input file**: `{backup_root}/prescan-data/error-logs.json`
+**Output file**: `{backup_root}/scan-results/agent-5b-error-logs.md`
+
+Instructions for agent:
+1. Read the input JSON file. If `log_files_found` is 0, write a brief "No error logs found" report and return
+2. Prioritize `auth_manipulation` entries as highest-value evidence — in the reference scan, IOC-3 (wp_set_password injection) was discovered only through error log analysis
+3. Count repeated `auth_event` entries over short time windows (minutes/hours) — this pattern indicates active backdoor usage
+4. Cross-reference `file_ref` paths across categories — the same PHP file appearing in multiple security categories is highly suspicious
+5. Use the `timeline` array to build a chronological narrative of compromise activity
+6. Note that `file_ref` contains absolute server paths (e.g., `/var/www/html/...`), not backup-relative paths
+7. Note that security plugin paths (wordfence, malcare, sucuri) may trigger patterns legitimately — flag but do not rate as critical without corroborating evidence
+8. Write findings table + timeline table + brief notes, target under 6,000 chars
+
+**Output format**:
+```
+# Agent 5b: Error Log Analysis
+
+## Security Findings
+
+| # | Severity | Category | Pattern | File Reference | Detail |
+|---|----------|----------|---------|----------------|--------|
+
+## Timeline
+
+| Timestamp | Category | Pattern | File | Message (truncated) |
+|-----------|----------|---------|------|---------------------|
+
+## Notes
+[Brief analysis notes — cross-category correlations, backdoor usage windows, etc.]
+```
+
 ---
 
 ## Phase 3: Database Analysis
@@ -160,6 +193,7 @@ After Phase 2-3 agents complete, read all `scan-results/agent-*.md` files and co
 - Suspicious file locations (e.g., PHP in uploads/)
 - Rogue admin accounts or user creation code
 - Injected content types (redirects, SEO spam, iframes, etc.)
+- Error log evidence (auth manipulation, backdoor usage timestamps, code injection indicators)
 - Estimated compromise date range from timestamps
 
 If no malware or suspicious findings were found in Phases 2-3, still proceed with vulnerability checks but note the clean status.
@@ -236,6 +270,7 @@ Instructions for the report agent:
 | Core File Integrity | ... | ... | ... |
 | Theme & WP-Content Malware | ... | ... | ... |
 | File Timestamps | ... | ... | ... |
+| Error Log Analysis | ... | ... | ... |
 | Database Content | ... | ... | ... |
 | Database Structure | ... | ... | ... |
 
@@ -280,6 +315,9 @@ Instructions for the report agent:
 ### File Timestamps
 [Condensed key findings from agent 5]
 
+### Error Log Analysis
+[Condensed key findings from agent 5b — auth manipulation, backdoor usage, code injection indicators]
+
 ### Database Content
 [Condensed key findings from agent 6]
 
@@ -290,7 +328,7 @@ Instructions for the report agent:
 **Chunk 5** (`cat >> {output_file} <<'SCANEOF'`): Compromise Timeline + Recommendations
 ```
 ## Compromise Timeline
-[Correlated timeline from file timestamps, database evidence, user creation dates]
+[Correlated timeline from file timestamps, error log timeline data, database evidence, user creation dates]
 
 ## Recommendations
 [Actionable remediation and hardening steps]

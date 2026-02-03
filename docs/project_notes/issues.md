@@ -126,7 +126,7 @@ Prioritized fix order for remaining pending issues:
 
 ### SCAN-01: No PHP Error Log / Debug Log Scanning [HIGH]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: High
 - **Component**: `wp-malware-prescan.py`, `prompt.md`
 - **Description**: PHP error logs (`error_log`, `debug.log`, `php-errors.log`) are one of the richest sources of compromise evidence. In the reference scan, error logs revealed: (1) IOC-3 — a `wp_set_password()` injection into wp-config.php line 77, discovered only via a PHP fatal error entry; (2) exact timestamps of 6 auto-login backdoor uses over Dec 23-24; (3) export failure patterns on Dec 22 that established the timeline start. The skill has zero awareness of error logs — neither the pre-scanner nor any agent prompt mentions them. WordPress sites commonly have `debug.log` in `wp-content/`, PHP error logs in the web root or a logs directory, and hosting-specific log paths.

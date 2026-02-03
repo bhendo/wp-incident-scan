@@ -33,6 +33,7 @@ Project configuration and important reference information for the wp-malware-sca
 - `prescan-data/core-files.json` - Core file contents (truncated at 10KB)
 - `prescan-data/theme-functions.json` - Theme functions.php contents
 - `prescan-data/timestamps.json` - File modification timestamps
+- `prescan-data/error-logs.json` - PHP error log security analysis
 - `prescan-data/database.json` - SQL dump analysis
 
 ## Agent Assignments
@@ -42,6 +43,7 @@ Project configuration and important reference information for the wp-malware-sca
 - Agent 3: Core File Integrity
 - Agent 4: Theme & WP-Content Analysis
 - Agent 5: Timestamp & Timeline Analysis
+- Agent 5b: Error Log Analysis
 - Agent 6: Database Content Analysis
 - Agent 7: Database Structural Audit
 - Agent 8: WordPress Core CVE Check
