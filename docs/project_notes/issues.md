@@ -158,7 +158,7 @@ Prioritized fix order for remaining pending issues:
 
 ### PERF-01: Enforce per-turn output budget for all sub-agents [HIGH]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-03)
 - **Severity**: High
 - **Component**: `prompt.md` — all sub-agent prompt sections
 - **Related bug**: BUG-01

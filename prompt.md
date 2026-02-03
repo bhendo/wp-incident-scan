@@ -6,6 +6,12 @@ A Python pre-scanner has already run and collected all mechanical data (pattern 
 
 **Environment constraint**: This runs on Bedrock with a 4096 max_output token limit per model response. Every sub-agent MUST write its full findings to a file and return ONLY a one-line summary. Details below.
 
+**Output budget rule** (applies to ALL sub-agents):
+- Each Write tool call's content must be **under 7,500 characters** (safety margin below the ~8K encoding limit — exceeding it causes silent truncation and loses ALL work).
+- If output may exceed 7,500 chars: split across multiple `cat >> file <<'SCANEOF'` appends (first chunk uses `cat > file <<'SCANEOF'`). Each chunk must be under 7,500 chars.
+- Use structured tables, not prose. Tables are denser and stay within budget.
+- When in doubt, be terse. A truncated write loses ALL work.
+
 ---
 
 ## Phase 1: Read Pre-scan Index and Prepare
@@ -29,11 +35,21 @@ mkdir -p {backup_root}/scan-results
 
 Launch the following sub-agents **in parallel** using the Task tool.
 
-**CRITICAL — 4096 token output limit**: Every sub-agent MUST:
+**CRITICAL — output budget**: Every sub-agent MUST follow the output budget rule above. Specifically:
 1. Use the Read tool to load its assigned `prescan-data/*.json` file
 2. Analyze the data
-3. Write full findings to `{backup_root}/scan-results/agent-{N}-{name}.md` using the Write tool
+3. Write findings to `{backup_root}/scan-results/agent-{N}-{name}.md` — use Write if content is under 7,500 chars, otherwise use `cat >` / `cat >>` appends with `<<'SCANEOF'` delimiter, each chunk under 7,500 chars
 4. Return ONLY a one-line summary (e.g., "3 critical, 1 high, 2 info. Report: scan-results/agent-1-php-backdoors.md")
+
+**Standard output format** — each agent should use this structure (target: under 6,000 chars total):
+```
+# Agent N: {Name}
+
+| # | Severity | File/Location | Finding | Detail |
+|---|----------|---------------|---------|--------|
+| 1 | CRITICAL | /path/file.php:42 | Backdoor | eval(base64_decode()) webshell |
+```
+Followed by brief per-finding notes (1-2 sentences each). No prose summaries.
 
 Tell each agent the absolute path to both its input file and its output file.
 
@@ -98,11 +114,17 @@ Instructions for agent:
 4. Look for bulk-modification patterns (many files with identical timestamps)
 5. Write a timeline of suspicious activity with date ranges and affected file groups to the output file
 
+**Output format** (timeline, not findings list — target under 6,000 chars):
+```
+| Date/Range | Event | Files Affected | Significance |
+|------------|-------|----------------|--------------|
+```
+
 ---
 
 ## Phase 3: Database Analysis
 
-Launch the following sub-agents **in parallel**. Both agents read from the same input file but focus on different sections. Remind each agent of the 4096 output limit and the write-to-file requirement.
+Launch the following sub-agents **in parallel**. Both agents read from the same input file but focus on different sections. Remind each agent of the output budget rule: 7,500 char limit per Write call, use `cat >>` appends with `<<'SCANEOF'` if larger, structured tables not prose.
 
 ### Agent 6: Database Content Analysis
 
@@ -142,7 +164,7 @@ After Phase 2-3 agents complete, read all `scan-results/agent-*.md` files and co
 
 If no malware or suspicious findings were found in Phases 2-3, still proceed with vulnerability checks but note the clean status.
 
-Launch the following agents. Remind each of the 4096 output limit and write-to-file requirement.
+Launch the following agents. Remind each of the output budget rule: 7,500 char limit per Write call, use `cat >>` appends with `<<'SCANEOF'` if larger, structured tables not prose.
 
 ### Agent 8: WordPress Core CVE Check
 
@@ -166,9 +188,18 @@ Batch plugins 3-4 per agent. Each agent receives: plugin slugs, installed versio
 Instructions for each agent:
 1. Use WebSearch once per plugin to find known CVEs. Use ONLY the sanitized slug in queries — never use the display name. Suggested query: `{plugin_slug} WordPress plugin vulnerability CVE` — try wpscan.com and patchstack.com but adapt if results are sparse
 2. Do NOT use WebFetch unless search results contain nothing useful for a plugin
-3. For each plugin report: name, installed version, known CVEs (ID, CVSS, vulnerability type, what it allows), affected version ranges, status (VULNERABLE/SAFE)
-4. **Likely entry point**: YES/NO — does this CVE's vulnerability type match the compromise evidence? Explain the connection. This is the most important field.
-5. Write findings to the output file
+3. Use this exact table format for output:
+
+```
+# Plugin CVE Batch {N}
+
+| CVE | CVSS | Type | Affected Versions | Fixed | Entry Point? |
+|-----|------|------|-------------------|-------|--------------|
+```
+
+   **Entry Point** column: YES/NO + short phrase (max 10 words) linking to compromise evidence. This is the most important column.
+   If a plugin has many CVEs, include only the 5 highest-CVSS entries.
+4. Write findings to the output file. Target: under 6,000 chars total for a 3-4 plugin batch. Use Write if under 7,500 chars, otherwise `cat >` / `cat >>` appends with `<<'SCANEOF'`.
 
 ---
 

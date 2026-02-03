@@ -20,7 +20,9 @@ Project configuration and important reference information for the wp-malware-sca
 ## Environment Constraints
 
 - **Bedrock max_output**: 4096 tokens per model response
+- **Output budget**: 7,500 chars max per Write tool call (safety margin below ~8K encoding limit). If larger, split across `cat >>` appends with `<<'SCANEOF'` delimiter, each chunk under 7,500 chars.
 - Sub-agents must write full findings to files and return only one-line summaries
+- Sub-agents use structured tables (not prose) to stay within budget
 
 ## Pre-Scanner Output Structure
 
