@@ -213,13 +213,17 @@ Launch one sub-agent (subagent_type: "general-purpose") to compile the full repo
 
 **Output file**: `{backup_root}/malware-scan-report.md`
 
+**CRITICAL**: The combined report will exceed 7,500 chars. The agent MUST write it in sequential chunks using `cat` appends — never a single Write call.
+
 Instructions for the report agent:
-1. Read ALL files in `{backup_root}/scan-results/agent-*.md`
-2. Also read `{backup_root}/prescan-data/discovery.json` for the plugin/theme inventory
-3. Compile the full report using the Write tool, structured as follows:
 
-**Report structure:**
+**Phase A — Read inputs:**
+1. Use Glob to find all `{backup_root}/scan-results/agent-*.md` files
+2. Read all agent files and `{backup_root}/prescan-data/discovery.json` (use parallel Read calls, 3-4 per turn)
 
+**Phase B — Write report in chunks** (each chunk under 7,500 chars, using `<<'SCANEOF'` delimiter):
+
+**Chunk 1** (`cat > {output_file} <<'SCANEOF'`): Report header + Summary + Vulnerability Assessment
 ```
 # WordPress Malware Scan Report
 
@@ -227,7 +231,7 @@ Instructions for the report agent:
 
 | Check | Severity | Verdict | Key Findings |
 |-------|----------|---------|--------------|
-| PHP Backdoors & Obfuscation | Critical/High/Medium/Low/Info | CLEAN/SUSPICIOUS | Brief description |
+| PHP Backdoors & Obfuscation | Critical/High/Medium/Low/Info | CLEAN/SUSPICIOUS | Brief |
 | Suspicious Files & Locations | ... | ... | ... |
 | Core File Integrity | ... | ... | ... |
 | Theme & WP-Content Malware | ... | ... | ... |
@@ -241,18 +245,50 @@ Instructions for the report agent:
 |-----------|---------|-----------|--------|
 | WordPress Core | x.x.x | CVE-XXXX-XXXXX (CVSS X.X) | VULNERABLE/SAFE |
 | Plugin Name | x.x.x | CVE-XXXX-XXXXX (CVSS X.X) | VULNERABLE/SAFE |
+```
 
+**Chunk 2** (`cat >> {output_file} <<'SCANEOF'`): Likely Entry Points + Plugin Inventory
+```
 ## Likely Entry Points
-[CVEs that correlate with observed compromise evidence, ranked by likelihood]
+[CVEs matching compromise evidence, ranked by likelihood — terse bullets]
 
 ## Plugin Inventory
 
 | Plugin | Version | Status | Risk Flags |
 |--------|---------|--------|------------|
+```
 
+**Chunk 3** (`cat >> {output_file} <<'SCANEOF'`): Detailed Findings — agents 1-3
+```
 ## Detailed Findings
-[Organized by agent: PHP backdoors, suspicious files, core integrity, themes, timestamps, DB content, DB structure]
 
+### PHP Backdoors & Obfuscation
+[Condensed key findings from agent 1]
+
+### Suspicious Files & Locations
+[Condensed key findings from agent 2]
+
+### Core File Integrity
+[Condensed key findings from agent 3]
+```
+
+**Chunk 4** (`cat >> {output_file} <<'SCANEOF'`): Detailed Findings — agents 4-7
+```
+### Theme & WP-Content Malware
+[Condensed key findings from agent 4]
+
+### File Timestamps
+[Condensed key findings from agent 5]
+
+### Database Content
+[Condensed key findings from agent 6]
+
+### Database Structure
+[Condensed key findings from agent 7]
+```
+
+**Chunk 5** (`cat >> {output_file} <<'SCANEOF'`): Compromise Timeline + Recommendations
+```
 ## Compromise Timeline
 [Correlated timeline from file timestamps, database evidence, user creation dates]
 
@@ -260,8 +296,10 @@ Instructions for the report agent:
 [Actionable remediation and hardening steps]
 ```
 
-4. Write the complete report to the output file using the Write tool
-5. Return a one-line summary with the overall verdict
+**Rules:**
+- Each chunk MUST be under 7,500 characters. If a chunk would exceed this, split it into sub-chunks.
+- For Detailed Findings: provide condensed summaries (key findings only, not full reproduction of agent reports). The full agent files are available for reference.
+- After all chunks are written, return ONLY a one-line summary with the overall verdict and finding counts.
 
 ### Step 2: Print summary to conversation (orchestrator)
 
