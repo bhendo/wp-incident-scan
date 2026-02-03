@@ -156,6 +156,34 @@ Prioritized fix order for remaining pending issues:
 - **Description**: The `@include` directive in wp-config.php is a classic malware persistence technique — it silently loads external PHP files before WordPress bootstraps. In the reference scan, a `@include` for `bv-preload.php` (MalCare error monitoring preloader) was found in wp-config.php. While this particular instance was legitimate, the same technique is used by WP-VCD and other malware families to load backdoors from wp-content or other non-standard locations. Agent 3 reads wp-config.php content but the prompt doesn't specifically instruct it to flag `@include`, `include`, `require`, or `require_once` directives pointing to non-standard files.
 - **Fix**: Add explicit instructions to Agent 3's prompt to flag any `@include`, `include`, `require`, or `require_once` in wp-config.php that references files outside of standard WordPress paths (wp-settings.php is the only expected include). Also consider adding `@include` detection to the PHP pattern scanner for wp-config.php specifically.
 
+### PERF-01: Enforce per-turn output budget for all sub-agents [HIGH]
+
+- **Status**: Pending
+- **Severity**: High
+- **Component**: `prompt.md` — all sub-agent prompt sections
+- **Related bug**: BUG-01
+- **Description**: The Bedrock environment caps each model response at 4096 tokens total (1024 thinking + ~3072 visible output). A Write tool call encodes the full file content in the response JSON, so any single Write with content exceeding ~8,000 characters will be truncated and fail. The current prompt instructs agents to "write findings to file and return a one-line summary" but doesn't constrain the size of the write itself. Agents with verbose output (Plugin CVE batches, Report Compiler) exceed the limit on the Write call and lose all work.
+- **Fix**: Update `prompt.md` with these changes across all agent sections:
+  1. Add an explicit rule: "Each Write call's content must be under 8,000 characters. If your report is larger, split it across multiple Bash append operations (`cat >> file << 'EOF'`), each under 8,000 characters."
+  2. For Plugin CVE agents: enforce terse table format — one row per CVE with columns (ID, CVSS, Type, Affected Versions, Status). No prose descriptions. Cap at ~6,000 characters per batch report.
+  3. For all filesystem/DB agents: specify structured output format (severity-rated table + brief notes) rather than open-ended prose.
+  4. Add the character budget and chunked-write instructions to the top-level "Environment constraint" section so every agent prompt inherits it.
+
+### PERF-02: Restructure Report Compiler for chunked output [HIGH]
+
+- **Status**: Pending
+- **Severity**: High
+- **Component**: `prompt.md` — Phase 5 (Report Compiler agent)
+- **Related bug**: BUG-01
+- **Description**: The Report Compiler reads 18 agent report files and writes a single combined `malware-scan-report.md`. This combined report far exceeds what can fit in a single Write call (~8,000 chars). The orchestrator has the same 4096 token limit, so moving compilation out of a sub-agent doesn't help. The compiler (or orchestrator) must write the report incrementally across multiple turns.
+- **Fix**: Restructure the Report Compiler instructions to write the report in sections using Bash append:
+  1. First turn: Write report header + Summary table (`cat > file << 'EOF'`)
+  2. Subsequent turns: Append each section (`cat >> file << 'EOF'`): Vulnerability Assessment, Likely Entry Points, Plugin Inventory, Detailed Findings (one append per agent category), Compromise Timeline, Recommendations
+  3. Each append must stay under 8,000 characters
+  4. If a section (e.g., Detailed Findings) is too large for one append, split it across multiple appends
+  5. Final turn: return one-line summary with verdict and finding counts
+  6. Alternative approach: have the orchestrator compile the report itself across multiple turns instead of delegating to a sub-agent, avoiding the overhead of agent prompt in the token budget
+
 ### SEC-09: Command Substitution Risk in $ARGUMENTS [LOW]
 
 - **Status**: Pending
