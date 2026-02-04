@@ -29,6 +29,8 @@ Create the scan-results directory:
 mkdir -p {backup_root}/scan-results
 ```
 
+**WP Version Release Date Lookup**: Use WebSearch to find the official release date of the WordPress version identified above. Suggested query: `WordPress {version} release date site:wordpress.org`. Extract the exact release date. You will pass this to Agent 5 in Phase 2. If no result is found, note the release date as "unknown".
+
 ---
 
 ## Phase 2: Filesystem & Log Analysis
@@ -109,10 +111,12 @@ Instructions for agent:
 
 Instructions for agent:
 1. Read the input JSON file
-2. Compare core file modification dates against the WP version's known release date
-3. Analyze modification clusters to identify potential compromise windows
-4. Look for bulk-modification patterns (many files with identical timestamps)
-5. Write a timeline of suspicious activity with date ranges and affected file groups to the output file
+2. The WP version release date is: {release_date from Phase 1 lookup}. Use ONLY this date — do NOT guess or use other dates. If "unknown", skip all version-date comparisons
+3. Note: version.php reflects the CURRENT WP version after upgrades, not the originally installed version. If the earliest core file timestamps predate the version's release date, the site was running an older WP version that was later upgraded — do NOT claim the current version was installed before its release date
+4. Core file modifications within 7 days after the version's release date should be flagged as "likely upgrade activity" rather than evidence of tampering
+5. Analyze modification clusters to identify potential compromise windows
+6. Look for bulk-modification patterns (many files with identical timestamps)
+7. Write a timeline of suspicious activity with date ranges and affected file groups to the output file
 
 **Output format** (timeline, not findings list — target under 6,000 chars):
 ```

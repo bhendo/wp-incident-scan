@@ -184,6 +184,29 @@ Prioritized fix order for remaining pending issues:
   5. Final turn: return one-line summary with verdict and finding counts
   6. Alternative approach: have the orchestrator compile the report itself across multiple turns instead of delegating to a sub-agent, avoiding the overhead of agent prompt in the token budget
 
+### SCAN-05: Add WP Version Release Date to Prescan Data [HIGH]
+
+- **Status**: Superseded (2026-02-04)
+- **Severity**: High
+- **Related bug**: BUG-02
+- **Component**: `wp-malware-prescan.py` — `analyze_timestamps()`
+- **Description**: Agent 5 is instructed to compare core file timestamps against the WP version's release date, but `timestamps.json` contains only the version string — no release date. The agent must guess the release date from training data, which led to BUG-02 (hallucinated WP 6.9 installation date 6 months before release). Additionally, `version.php` reflects the current version after upgrades, not the originally installed version, but nothing in the prescan data communicates this distinction.
+- **Original fix**: Add a hardcoded `WP_RELEASE_DATES` dictionary to the prescan script.
+- **Superseded by**: Orchestrator WebSearch approach — Phase 1 of `prompt.md` now performs a WebSearch for the WP version release date, keeping the prescan script offline/deterministic. The release date is passed to Agent 5 in the prompt.
+
+### SCAN-06: Agent 5 Prompt Guardrails for Version/Timeline Claims [HIGH]
+
+- **Status**: Completed (2026-02-04)
+- **Severity**: High
+- **Related bug**: BUG-02
+- **Component**: `prompt.md` — Agent 5 (Timestamp & Timeline Analysis)
+- **Description**: Agent 5's prompt says "compare core file modification dates against the WP version's known release date" but provides no guardrails against impossible conclusions. The agent claimed WP 6.9 was installed May 27, 2025 (6 months before release) and built a zero-day narrative around it. The prompt needs explicit rules: (1) never claim a WP version was installed before its release date, (2) if earliest file timestamps predate the version's release, the site was likely upgraded from an earlier version, (3) core file modifications near the version's release date may indicate a routine upgrade rather than tampering.
+- **Fix**: Add explicit instructions to Agent 5's prompt section:
+  1. "Use `wp_version_release_date` from the JSON — do NOT guess release dates"
+  2. "If core file timestamps predate the release date, state the site was running an earlier WP version and was later upgraded"
+  3. "Core file modifications within 7 days of the release date should be flagged as 'likely upgrade activity' rather than tampering"
+  4. "Do NOT claim a specific WP version was installed on a date before its release"
+
 ### SEC-09: Command Substitution Risk in $ARGUMENTS [LOW]
 
 - **Status**: Pending
