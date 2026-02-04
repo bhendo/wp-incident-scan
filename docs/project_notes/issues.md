@@ -7,24 +7,21 @@ Track work completed on this skill.
 ### 2026-02-03 - Security Review
 
 - **Status**: Completed
-- **Description**: Comprehensive security review of all skill files (SKILL.md, prompt.md, wp-malware-prescan.py)
+- **Description**: Comprehensive security review of all skill files (SKILL.md, prompts/, prescan/)
 - **Findings**: 2 High, 4 Medium, 3 Low severity issues identified
 - **Notes**: Individual issues logged below.
 
 ---
 
-## Remediation Order
+## Remaining Pending Issues
 
-Prioritized fix order for remaining pending issues:
-
-1. **SEC-05 + SEC-06** — Resource limits & gzip bomb (tackle together)
-2. **SEC-07** — WebSearch query manipulation (plugin slug sanitization)
-3. **SEC-04** — Sensitive data exposure (credential redaction)
-4. **SEC-09** — Command substitution risk (verification task)
-5. **SEC-03** — Backup directory contamination (do before SEC-04 if output paths change; otherwise after)
-6. **SEC-01** — Prompt injection (most complex, do last)
-
-**Notes**: SEC-03 should ideally precede SEC-04 since output location affects cleanup strategy, but SEC-03 has a wider blast radius. If SEC-03 is deferred, SEC-04 can still be done standalone. SEC-05/SEC-06 are grouped because both are resource-limit hardening in the same file.
+1. **SEC-01** — Prompt injection via scanned content (most complex)
+2. **SEC-03** — Backup directory contamination (write output outside backup)
+3. **SEC-09** — Command substitution risk in $ARGUMENTS (verification task)
+4. **DB-04** — No whitespace-obfuscated payload detection
+5. **SCAN-02** — No Wordfence/security plugin log analysis
+6. **SCAN-03** — No multisite/subsite detection
+7. **SCAN-04** — No @include detection in wp-config.php
 
 ---
 
@@ -210,20 +207,12 @@ Prioritized fix order for remaining pending issues:
 ### REFACTOR-01: Modularize prompt.md into per-phase files [MEDIUM]
 
 - **Status**: Completed (2026-02-04)
-- **Severity**: Medium
-- **Component**: `prompt.md`, `SKILL.md`
-- **Description**: `prompt.md` is a 361-line monolithic file loaded entirely into the orchestrator's input context for every turn. Most content is irrelevant to the current phase. Splitting into per-phase files reduces input tokens by ~60-90% per turn and improves maintainability.
-- **Design**: `docs/plans/2026-02-04-prompt-modularization-design.md`
-- **Summary**: Split into `prompts/` directory: `preamble.md` (shared constraints/templates), `phase-1-prepare.md`, `phase-2-analysis.md` (agents 1-7 merged, all parallel), `phase-3-vulns.md` (agents 8-9+), `phase-4-report.md`, `error-handling.md`. Delete `prompt.md`. Update SKILL.md to read phase files sequentially.
+- **Summary**: Split monolithic `prompt.md` into `prompts/` directory (preamble + 4 phase files + error-handling). Merged old Phases 2+3 into single parallel phase. 60-90% input token reduction per turn.
 
 ### REFACTOR-02: Modularize wp-malware-prescan.py into package [MEDIUM]
 
 - **Status**: Completed (2026-02-04)
-- **Severity**: Medium
-- **Component**: `wp-malware-prescan.py`
-- **Description**: 1302-line monolithic script with all constants, helpers, scanners, and orchestration in one file. Hard to navigate, test, and extend with new scan sections.
-- **Design**: `docs/plans/2026-02-04-prescan-modularization-design.md`
-- **Summary**: Extract into `prescan/` package: `constants.py` (patterns/limits), `utils.py` (shared helpers), `discovery.py` (WP root/plugin/theme/log discovery), `scanners/*.py` (7 scan modules), `scanner.py` (orchestration). Keep `wp-malware-prescan.py` as 3-line entry point shim so SKILL.md doesn't change.
+- **Summary**: Extracted into `prescan/` package (constants, utils, discovery, 7 scanner modules, orchestration). Entry point shim preserved. Verified identical output against baseline.
 
 ### SEC-09: Command Substitution Risk in $ARGUMENTS [LOW]
 
