@@ -1,12 +1,12 @@
 # Key Facts
 
-Project configuration and important reference information for the wp-malware-scan skill.
+Project configuration and important reference information for the wp-incident-scan skill.
 
 ## Skill Configuration
 
-- **Skill name**: `wp-malware-scan`
+- **Skill name**: `wp-incident-scan`
 - **Entry point**: `SKILL.md`
-- **Pre-scanner**: `wp-malware-prescan.py` → `prescan/` package (Python 3, no external dependencies). Entry point shim preserved.
+- **Pre-scanner**: `wp-incident-prescan.py` → `prescan/` package (Python 3, no external dependencies). Entry point shim preserved.
 - **Orchestration**: `prompts/` directory (4-phase modular workflow: preamble + phase-1 through phase-4 + error-handling)
 - **Model invocation**: Disabled (`disable-model-invocation: true` in SKILL.md)
 

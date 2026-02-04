@@ -30,7 +30,7 @@ Track bugs encountered and their solutions for future reference.
 
 - **Date**: 2026-02-04
 - **Status**: Fixed (2026-02-04)
-- **Component**: `wp-malware-prescan.py` — `analyze_timestamps()`, `prompt.md` — Agent 5
+- **Component**: `wp-incident-prescan.py` — `analyze_timestamps()`, `prompt.md` — Agent 5
 - **Symptoms**: Report 2 claims "WordPress 6.9 installed" on May 27, 2025, but WP 6.9 was not released until December 2, 2025. Agent 5 also built a "zero-day exploitation" narrative claiming core files were tampered one day after release, when the Dec 3 modifications were likely a routine upgrade to WP 6.9.
 - **Root cause**: Agent 5 is instructed to "compare core file modification dates against the WP version's known release date" (prompt.md line 112) but receives NO release date data in `timestamps.json`. The agent relies entirely on LLM training knowledge for the release date, which can be wrong or outdated. No validation exists to catch impossible claims (file timestamps predating the version's release). Additionally, `version.php` reflects the *current* version after upgrades — it does not tell you what version was originally installed.
 - **Impact**: The hallucinated timeline cascades into the final report's Compromise Timeline and Likely Entry Points sections, producing a fabricated zero-day narrative that misleads remediation priorities.

