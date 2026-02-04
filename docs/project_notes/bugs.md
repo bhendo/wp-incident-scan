@@ -35,3 +35,21 @@ Track bugs encountered and their solutions for future reference.
 - **Root cause**: Agent 5 is instructed to "compare core file modification dates against the WP version's known release date" (prompt.md line 112) but receives NO release date data in `timestamps.json`. The agent relies entirely on LLM training knowledge for the release date, which can be wrong or outdated. No validation exists to catch impossible claims (file timestamps predating the version's release). Additionally, `version.php` reflects the *current* version after upgrades — it does not tell you what version was originally installed.
 - **Impact**: The hallucinated timeline cascades into the final report's Compromise Timeline and Likely Entry Points sections, producing a fabricated zero-day narrative that misleads remediation priorities.
 - **Fix**: Instead of a prescan lookup table (SCAN-05 was superseded), the orchestrator now performs a WebSearch for the WP version release date at the end of Phase 1 and passes it to Agent 5. Agent 5's prompt (SCAN-06) was rewritten with guardrails: use only the provided date, never guess, understand version.php reflects upgrades not original installs, and flag near-release-date modifications as likely upgrade activity.
+
+### BUG-04: Plugin CVE agents hallucinate CVE IDs, misattribute to wrong products [CRITICAL]
+
+- **Date**: 2026-02-04
+- **Status**: Open
+- **Component**: Phase 3 Plugin CVE batch agents (`prompts/phase-3-vulns.md`)
+- **Symptoms**: Reports contain CVE IDs that are either fabricated or belong to completely unrelated software. In Report 3, only 3 of 16 CVEs (19%) were correctly attributed. In Report 4, 0 of 15 CVEs were fully correct (1 partially correct). Examples of misattribution: CVE-2024-26641 (Linux kernel IPv6 tunneling bug) attributed to Slider Revolution; CVE-2023-6932 (Linux kernel IGMP use-after-free) attributed to WP Mail SMTP; CVE-2022-0772 (Libsndfile buffer overflow) attributed to User Role Editor. Report 4 additionally fabricated 6 "WordPress Core" CVEs (CVE-2024-27956 through 27962) that are actually Patchstack-assigned plugin CVEs for unrelated plugins.
+- **Root cause**: CVE batch agents rely entirely on LLM training knowledge to look up CVEs for each plugin. The model "knows" a plugin has had vulnerabilities but fabricates plausible-looking CVE IDs or grabs real CVE IDs from unrelated products. No external verification against NVD, WPScan, or Patchstack APIs occurs. CVSS scores are also fabricated, with hallucinated CVEs almost always assigned 8.0-9.9 to maximize apparent severity.
+- **Impact**: Fabricated CVEs cascade into the Vulnerability Assessment, Likely Entry Points, and Compromise Timeline sections. Attack chain hypotheses are built on nonexistent vulnerabilities (e.g., Report 3's primary attack vector relies on CVE-2023-47784 for Slider Revolution, which does not exist for that plugin). This undermines the credibility of the entire report and can mislead remediation priorities.
+- **Hallucination patterns observed**:
+  - Real CVE IDs mapped to wrong products (most common — ~50% of errors)
+  - Completely fabricated CVE IDs that don't exist in NVD (~30% of errors)
+  - Correct CVE ID and plugin but wrong vulnerability type or CVSS score (~20% of errors)
+  - Suspiciously high CVE sequence numbers (e.g., CVE-2025-60080, CVE-2025-60174)
+  - Sequential CVE blocks attributed to one product (e.g., CVE-2024-27956-27962 all claimed as WP Core)
+- **Correctly identified CVEs across both reports**: CVE-2023-6933 (Better Search Replace), CVE-2023-48777 (Elementor), CVE-2020-25213 (wp-file-manager) — all well-known, widely-reported vulnerabilities
+- **Fix needed**: CVE agents must be grounded against live external data rather than LLM memory. Options: (1) WebSearch or WebFetch against NVD API (`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-XXXX`), WPScan API, or Patchstack API during Phase 3 to verify each CVE before including it. (2) Alternatively, use WebSearch to find real CVEs for each plugin+version combination rather than asking the model to recall them. (3) Add a post-processing validation step that cross-checks all CVE IDs against NVD before the report is finalized.
+- **Related**: BUG-02 (same class — LLM training knowledge used where external data is needed)
