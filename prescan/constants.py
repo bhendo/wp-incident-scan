@@ -107,6 +107,9 @@ DB_SUSPICIOUS_PATTERNS = [
     (r'<\?php', 'PHP tag in database'),
     (r'wp_cd_code', 'WP-VCD: wp_cd_code'),
     (r'wp_cd_key', 'WP-VCD: wp_cd_key'),
+    # Whitespace-obfuscated payloads (DB-04): active content hidden behind
+    # excessive blank lines to push it below visible area in admin UIs
+    (r'(?:\r?\n\s*){10,}(?:<script|<iframe|<\?php|\beval\s*\()', 'whitespace-obfuscated payload'),
 ]
 
 INJECTION_OPTION_RE = re.compile(

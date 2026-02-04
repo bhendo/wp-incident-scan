@@ -126,7 +126,8 @@ Instructions for agent:
 2. Review each content match and assess whether it is truly injected malware or legitimate plugin data
 3. For script tags, determine if they are ad injections, SEO spam, redirect scripts, or other malware
 4. If code snippets exist, review each for malicious intent
-5. Write a severity-rated list of confirmed database injections with context to the output file
+5. For matches labeled `whitespace-obfuscated payload`, note that the attacker used excessive blank lines (`\r\n` padding) to hide active content below the visible area of admin textareas (e.g., WPCode/Insert Headers and Footers). This is a strong indicator of malicious intent — rate at least HIGH.
+6. Write a severity-rated list of confirmed database injections with context to the output file
 
 ### Agent 7: Database Structural Audit
 
