@@ -24,6 +24,22 @@ Project configuration and important reference information for the wp-malware-sca
 - Sub-agents must write full findings to files and return only one-line summaries
 - Sub-agents use structured tables (not prose) to stay within budget
 
+## Token Limit Mechanics
+
+- The **4096 output token limit** constrains each model response (orchestrator and sub-agents alike)
+- The orchestrator reads `prompt.md` via the Read tool — this is **input context**, not system prompt
+- When launching sub-agents, the orchestrator **composes its own prompts** for Task tool calls — it paraphrases the instructions from prompt.md, it does not copy-paste them verbatim
+- Therefore: splitting prompt.md into smaller files reduces **input tokens** (cost, focus, context window longevity) but does NOT help with the 4096 output limit
+- The output limit is mitigated by the 7,500-char Write budget and chunked-write pattern (see BUG-01/PERF-01)
+- The pre-scanner runs as a Python process, not an LLM call — it has no token constraints
+
+## Agent Dependencies
+
+- Agents 1-7 are **fully independent** — no agent depends on another's output
+- The current Phase 2 (agents 1-5b) / Phase 3 (agents 6-7) split is artificial; they can all run in parallel
+- Phase 4 (CVE checks, agents 8-9+) **depends on Phases 2-3** — it uses a compromise evidence summary compiled from agents 1-7
+- Phase 5 (report) **depends on all prior phases**
+
 ## Pre-Scanner Output Structure
 
 - `wp-prescan-results.json` - Lightweight index (in backup root)
