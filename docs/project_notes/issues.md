@@ -207,6 +207,24 @@ Prioritized fix order for remaining pending issues:
   3. "Core file modifications within 7 days of the release date should be flagged as 'likely upgrade activity' rather than tampering"
   4. "Do NOT claim a specific WP version was installed on a date before its release"
 
+### REFACTOR-01: Modularize prompt.md into per-phase files [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `prompt.md`, `SKILL.md`
+- **Description**: `prompt.md` is a 361-line monolithic file loaded entirely into the orchestrator's input context for every turn. Most content is irrelevant to the current phase. Splitting into per-phase files reduces input tokens by ~60-90% per turn and improves maintainability.
+- **Design**: `docs/plans/2026-02-04-prompt-modularization-design.md`
+- **Summary**: Split into `prompts/` directory: `preamble.md` (shared constraints/templates), `phase-1-prepare.md`, `phase-2-analysis.md` (agents 1-7 merged, all parallel), `phase-3-vulns.md` (agents 8-9+), `phase-4-report.md`, `error-handling.md`. Delete `prompt.md`. Update SKILL.md to read phase files sequentially.
+
+### REFACTOR-02: Modularize wp-malware-prescan.py into package [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `wp-malware-prescan.py`
+- **Description**: 1302-line monolithic script with all constants, helpers, scanners, and orchestration in one file. Hard to navigate, test, and extend with new scan sections.
+- **Design**: `docs/plans/2026-02-04-prescan-modularization-design.md`
+- **Summary**: Extract into `prescan/` package: `constants.py` (patterns/limits), `utils.py` (shared helpers), `discovery.py` (WP root/plugin/theme/log discovery), `scanners/*.py` (7 scan modules), `scanner.py` (orchestration). Keep `wp-malware-prescan.py` as 3-line entry point shim so SKILL.md doesn't change.
+
 ### SEC-09: Command Substitution Risk in $ARGUMENTS [LOW]
 
 - **Status**: Pending
