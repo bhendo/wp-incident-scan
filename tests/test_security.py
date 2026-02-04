@@ -60,19 +60,17 @@ class TestSqlDumpDiscovery(unittest.TestCase):
 class TestWpRootBoundary(unittest.TestCase):
     def test_wp_root_outside_backup_detected(self):
         """PATH-03: wp_root resolving outside backup must be caught."""
-        import os as _os
         backup_resolved = '/home/user/backup'
         wp_root_resolved = '/var/www/other-site'
         result = (wp_root_resolved == backup_resolved or
-                  wp_root_resolved.startswith(backup_resolved + _os.sep))
+                  wp_root_resolved.startswith(backup_resolved + os.sep))
         self.assertFalse(result)
 
     def test_wp_root_inside_backup_accepted(self):
-        import os as _os
         backup_resolved = '/home/user/backup'
         wp_root_resolved = '/home/user/backup/wordpress'
         result = (wp_root_resolved == backup_resolved or
-                  wp_root_resolved.startswith(backup_resolved + _os.sep))
+                  wp_root_resolved.startswith(backup_resolved + os.sep))
         self.assertTrue(result)
 
 
@@ -92,12 +90,18 @@ class TestResourceLimits(unittest.TestCase):
             # Create an oversized wp-config.php
             big_file = wp / 'wp-config.php'
             big_file.write_text('x' * (11 * 1024 * 1024))  # 11MB
+            # Create a normal-sized core file
+            (wp / 'index.php').write_text("<?php // WordPress index ?>")
 
             from prescan.scanners.core_files import read_core_files
             result = read_core_files(wp)
 
             self.assertIn('wp-config.php', result)
             self.assertIn('SKIPPED', result['wp-config.php'])
+            # Normal-sized file should be read successfully
+            self.assertIn('index.php', result)
+            self.assertNotIn('SKIPPED', result['index.php'])
+            self.assertIn('WordPress index', result['index.php'])
 
     def test_max_security_log_files_constant(self):
         """LIMIT-02: MAX_SECURITY_LOG_FILES should exist."""
