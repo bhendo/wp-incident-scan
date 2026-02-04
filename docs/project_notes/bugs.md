@@ -53,3 +53,13 @@ Track bugs encountered and their solutions for future reference.
 - **Correctly identified CVEs across both reports**: CVE-2023-6933 (Better Search Replace), CVE-2023-48777 (Elementor), CVE-2020-25213 (wp-file-manager) — all well-known, widely-reported vulnerabilities
 - **Fix needed**: CVE agents must be grounded against live external data rather than LLM memory. Options: (1) WebSearch or WebFetch against NVD API (`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-XXXX`), WPScan API, or Patchstack API during Phase 3 to verify each CVE before including it. (2) Alternatively, use WebSearch to find real CVEs for each plugin+version combination rather than asking the model to recall them. (3) Add a post-processing validation step that cross-checks all CVE IDs against NVD before the report is finalized.
 - **Related**: BUG-02 (same class — LLM training knowledge used where external data is needed)
+
+### BUG-05: Email redaction removes actionable information from incident reports [MEDIUM]
+
+- **Date**: 2026-02-04
+- **Status**: Fixed (2026-02-04)
+- **Component**: `prescan/utils.py` — `redact_email()`, `prescan/scanners/database.py`
+- **Symptoms**: Suspicious admin account table in reports shows `@gmail.com` or `@soclogix.com` instead of full email addresses, making it impossible for the site owner to identify or act on specific accounts. When the email's local part is empty after redaction, the entry is indistinguishable from other accounts at the same domain.
+- **Root cause**: `redact_email()` was added as part of SEC-04 to prevent sensitive data exposure. However, in an incident response context, the report recipient is the site owner/admin who already has access to this data. Redacting emails works against the report's purpose — identifying exactly which accounts to audit, remove, or contact.
+- **Impact**: Degraded report actionability. The "Audit Admin Accounts" recommendation is harder to follow when accounts can't be uniquely identified.
+- **Fix**: Removed `redact_email()` function from `prescan/utils.py`, removed its import and call site in `prescan/scanners/database.py`, updated tests in `tests/test_database.py` and `tests/test_utils.py`, and updated the `sensitive_data_notice` in `prescan/scanner.py`. Emails are now passed through unmodified.

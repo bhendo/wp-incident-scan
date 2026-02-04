@@ -46,12 +46,12 @@ class TestUserExtraction:
             results = scan_sql_dump(path)
             assert len(results['users']) == 1
             user = results['users'][0]
-            # Email should be redacted form of admin@example.com, NOT 'admin' (nicename)
+            # Email should be admin@example.com, NOT 'admin' (nicename)
             assert '@' in user['email'], (
                 f"Email field has no @: got '{user['email']}'. "
                 f"Likely extracting nicename instead of email (BUG-03)."
             )
-            assert user['email'] == 'a***@example.com'
+            assert user['email'] == 'admin@example.com'
         finally:
             os.unlink(path)
 
@@ -87,15 +87,15 @@ class TestUserExtraction:
             assert len(results['users']) == 3
 
             assert results['users'][0]['login'] == 'admin'
-            assert results['users'][0]['email'] == 'a***@example.com'
+            assert results['users'][0]['email'] == 'admin@example.com'
             assert results['users'][0]['nicename'] == 'admin'
 
             assert results['users'][1]['login'] == 'editor'
-            assert results['users'][1]['email'] == 'e***@example.com'
+            assert results['users'][1]['email'] == 'editor@example.com'
             assert results['users'][1]['nicename'] == 'editor-nick'
 
             assert results['users'][2]['login'] == 'subscriber'
-            assert results['users'][2]['email'] == 's***@test.org'
+            assert results['users'][2]['email'] == 'subscriber@test.org'
             assert results['users'][2]['nicename'] == 'sub-user'
         finally:
             os.unlink(path)
@@ -123,7 +123,7 @@ INSERT INTO `wp_users` VALUES (1,'testuser','$P$Bhash','test-nice','test+tag@exa
         try:
             results = scan_sql_dump(path)
             assert len(results['users']) == 1
-            assert results['users'][0]['email'] == 't***@example.com'
+            assert results['users'][0]['email'] == 'test+tag@example.com'
         finally:
             os.unlink(path)
 
@@ -135,7 +135,7 @@ INSERT INTO `wp_users` VALUES (1,'user1','$P$Bhash','nick','user@mail.sub.exampl
         path = _write_sql(sql)
         try:
             results = scan_sql_dump(path)
-            assert results['users'][0]['email'] == 'u***@mail.sub.example.co.uk'
+            assert results['users'][0]['email'] == 'user@mail.sub.example.co.uk'
         finally:
             os.unlink(path)
 

@@ -55,18 +55,6 @@ def redact_wp_config(content: str) -> str:
     return content
 
 
-def redact_email(email: str) -> str:
-    """Partially redact an email address, keeping first char of local part + full domain (SEC-04).
-
-    Example: admin@example.com -> a***@example.com
-    """
-    if '@' not in email:
-        return email
-    local, domain = email.split('@', 1)
-    if local:
-        return f"{local[0]}***@{domain}"
-    return f"***@{domain}"
-
 
 def sanitize_slug(raw: str) -> str:
     """Sanitize a plugin/theme slug for safe use in search queries (SEC-07)."""

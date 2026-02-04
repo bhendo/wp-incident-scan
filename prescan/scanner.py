@@ -190,9 +190,9 @@ def main():
             'wp_root': wp_root_rel,
             'sensitive_data_notice': (
                 'Output files may contain fragments of sensitive data in pattern matches '
-                'and content snippets (e.g., partial credentials, email fragments, password hashes). '
-                'DB_PASSWORD, auth keys, and salts are redacted from wp-config.php. User emails are '
-                'partially redacted. Treat all output files as confidential and delete after analysis.'
+                'and content snippets (e.g., partial credentials, password hashes). '
+                'DB_PASSWORD, auth keys, and salts are redacted from wp-config.php. '
+                'Treat all output files as confidential and delete after analysis.'
             ),
         },
         'discovery': discovery,

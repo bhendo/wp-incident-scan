@@ -22,6 +22,12 @@ Track work completed on this skill.
 - **Description**: Fixed capture group indexing bug in `prescan/scanners/database.py` where user email extraction used `um[3]` (nicename) instead of `um[4]` (email). Added test infrastructure (`tests/`) and regression tests for database scanner user extraction and `redact_email()` utility.
 - **Related**: BUG-03
 
+### 2026-02-04 - BUG-05: Review and Remove Unnecessary Data Redaction
+
+- **Status**: Completed
+- **Description**: Email redaction in `redact_email()` removes actionable information from incident reports. Reviewing all redaction across the codebase (emails, wp-config values, password hashes, paths) to determine which redactions are appropriate for an incident response tool and which are counterproductive.
+- **Related**: BUG-05, SEC-04, INFO-01, INFO-02, INFO-03
+
 ### 2026-02-04 - Feature Gap Analysis
 
 - **Status**: Completed

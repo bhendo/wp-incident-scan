@@ -11,7 +11,6 @@ from prescan.constants import (
     INJECTION_OPTION_RE,
     MAX_GZIP_DECOMPRESSED_BYTES,
 )
-from prescan.utils import redact_email
 
 _PASSWORD_HASH_RE = re.compile(
     r'\$P\$[A-Za-z0-9./]{31}'
@@ -111,7 +110,7 @@ def scan_sql_dump(dump_path: str) -> dict:
                     for um in user_matches:
                         results['users'].append({
                             'id': um[0], 'login': um[1],
-                            'email': redact_email(um[4]),
+                            'email': um[4],
                             'nicename': um[3],
                         })
 
