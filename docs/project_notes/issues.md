@@ -209,7 +209,7 @@ Prioritized fix order for remaining pending issues:
 
 ### REFACTOR-01: Modularize prompt.md into per-phase files [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `prompt.md`, `SKILL.md`
 - **Description**: `prompt.md` is a 361-line monolithic file loaded entirely into the orchestrator's input context for every turn. Most content is irrelevant to the current phase. Splitting into per-phase files reduces input tokens by ~60-90% per turn and improves maintainability.

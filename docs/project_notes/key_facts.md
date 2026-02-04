@@ -7,7 +7,7 @@ Project configuration and important reference information for the wp-malware-sca
 - **Skill name**: `wp-malware-scan`
 - **Entry point**: `SKILL.md`
 - **Pre-scanner**: `wp-malware-prescan.py` (Python 3, no external dependencies)
-- **Orchestration**: `prompt.md` (5-phase multi-agent workflow)
+- **Orchestration**: `prompts/` directory (4-phase modular workflow: preamble + phase-1 through phase-4 + error-handling)
 - **Model invocation**: Disabled (`disable-model-invocation: true` in SKILL.md)
 
 ## Allowed Tools
