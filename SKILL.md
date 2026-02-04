@@ -1,12 +1,12 @@
 ---
-name: wp-malware-scan
+name: wp-incident-scan
 description: Scan a WordPress backup for malware, backdoors, and known vulnerabilities
-allowed-tools: Bash(python3 ~/.claude/skills/wp-malware-scan/wp-malware-prescan.py *), Bash(mkdir -p */scan-results), Bash(cat >> */scan-results/*), Read, Write, Edit, Glob, Grep, Task, WebSearch, WebFetch
+allowed-tools: Bash(python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py *), Bash(mkdir -p */scan-results), Bash(cat >> */scan-results/*), Read, Write, Edit, Glob, Grep, Task, WebSearch, WebFetch
 argument-hint: /path/to/wordpress/backup
 disable-model-invocation: true
 ---
 
-# WordPress Malware Scan
+# WordPress Incident Scan
 
 Scan the WordPress backup at the path provided by the user: `$ARGUMENTS`
 
@@ -15,7 +15,7 @@ If no path was provided, ask the user for the path to the WordPress backup direc
 ## Step 1: Run the pre-scanner
 
 ```bash
-python3 ~/.claude/skills/wp-malware-scan/wp-malware-prescan.py "$ARGUMENTS"
+python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py "$ARGUMENTS"
 ```
 
 ## Step 2: Follow the modular scan prompts

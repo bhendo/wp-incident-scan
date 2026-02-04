@@ -1,6 +1,6 @@
-# wp-malware-scan
+# wp-incident-scan
 
-WordPress backup malware scanner skill for Claude Code. Scans backups for malware, backdoors, and known vulnerabilities using a Python pre-scanner and multi-agent AI analysis.
+WordPress backup incident scanner skill for Claude Code. Scans backups for malware, backdoors, and known vulnerabilities using a Python pre-scanner and multi-agent AI analysis.
 
 ## Project Memory System
 

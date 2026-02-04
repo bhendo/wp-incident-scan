@@ -6,7 +6,7 @@ __pycache__/
 prescan-data/
 scan-results/
 wp-prescan-results.json
-malware-scan-report.md
+incident-scan-report.md
 
 # Scan output for comparison
 __compare__

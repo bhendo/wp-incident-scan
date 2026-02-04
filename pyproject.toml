@@ -1,5 +1,5 @@
 [project]
-name = "wp-malware-scan"
+name = "wp-incident-scan"
 version = "0.1.0"
 requires-python = ">=3.9"
 

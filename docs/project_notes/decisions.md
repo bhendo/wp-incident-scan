@@ -1,6 +1,6 @@
 # Architectural Decisions
 
-Record of architectural and design decisions for the wp-malware-scan skill.
+Record of architectural and design decisions for the wp-incident-scan skill.
 
 ## Entries
 

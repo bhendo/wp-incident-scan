@@ -6,7 +6,7 @@ After all agents complete, read all files in `{backup_root}/scan-results/` to co
 
 Launch one sub-agent (subagent_type: "general-purpose") to compile the full report.
 
-**Output file**: `{backup_root}/malware-scan-report.md`
+**Output file**: `{backup_root}/incident-scan-report.md`
 
 **CRITICAL**: The combined report will exceed 7,500 chars. The agent MUST write it in sequential chunks using `cat` appends — never a single Write call.
 
@@ -22,7 +22,7 @@ Instructions for the report agent:
 
 **Chunk 1** (`cat > {output_file} <<'SCANEOF'`): Report header + Summary + Vulnerability Assessment
 ```
-# WordPress Malware Scan Report
+# WordPress Incident Scan Report
 
 ## Summary
 

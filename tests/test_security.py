@@ -1,4 +1,4 @@
-"""Security regression tests for wp-malware-scan prescan."""
+"""Security regression tests for wp-incident-scan prescan."""
 import os
 import sys
 import tempfile
