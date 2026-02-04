@@ -16,6 +16,13 @@ Track work completed on this skill.
 - **Status**: Completed
 - **Description**: Renumbered agents sequentially, removing 5b/5c suffixes: 5b→6, 5c→7, 6→8, 7→9, 8→10, 9+→11+. Updated 6 files: phase-2-analysis.md, phase-3-vulns.md, phase-4-report.md, key_facts.md, issues.md, scan-db-enhancements plan.
 
+### 2026-02-04 - Feature Gap Analysis
+
+- **Status**: Completed
+- **Description**: Comprehensive gap analysis of scanning capabilities. Identified 18 feature gaps across detection coverage, analysis depth, and output/workflow improvements.
+- **Findings**: 5 High, 8 Medium, 5 Low severity gaps identified
+- **Notes**: Individual issues logged below with GAP- prefix. Highest-value items: GAP-01 (JS malware), GAP-02 (mu-plugins/drop-ins), GAP-03 (core hash verification), GAP-05 (access logs), GAP-18 (.user.ini scanning).
+
 ### 2026-02-04 - Security Review #2
 
 - **Status**: Completed
@@ -46,6 +53,24 @@ Track work completed on this skill.
 17. **INFO-03** — Password hashes in unredacted SQL context strings [LOW]
 18. **LIMIT-01** — Unbounded `.htaccess` enumeration and unprotected reads [LOW]
 19. **LIMIT-02** — Unbounded `rglob('*')` in security log discovery [LOW]
+20. **GAP-01** — No JavaScript malware detection (skimmers, redirects, cryptominers) [HIGH]
+21. **GAP-02** — No mu-plugins or drop-in file scanning [HIGH]
+22. **GAP-03** — No core file hash verification against wordpress.org checksums [HIGH]
+23. **GAP-04** — No network IOC extraction (URLs, domains, IPs from malicious code) [HIGH]
+24. **GAP-05** — No web server access log analysis (Apache/Nginx) [HIGH]
+25. **GAP-06** — No file entropy analysis for obfuscation detection [MEDIUM]
+26. **GAP-07** — No image/media polyglot detection beyond .ico files [MEDIUM]
+27. **GAP-08** — No user role/capability tampering detection [MEDIUM]
+28. **GAP-09** — No cron job callback analysis [MEDIUM]
+29. **GAP-10** — No file encoding anomaly detection (BOM, UTF-16, null bytes) [LOW]
+30. **GAP-11** — No delta/comparison scanning between two backups [MEDIUM]
+31. **GAP-12** — No plugin/theme file inventory comparison against wordpress.org [MEDIUM]
+32. **GAP-13** — No machine-readable (JSON) report output [LOW]
+33. **GAP-14** — No YARA rule support [LOW]
+34. **GAP-15** — No scan resumability after partial failure [LOW]
+35. **GAP-16** — No known malware hash database [MEDIUM]
+36. **GAP-17** — No remediation file manifest [MEDIUM]
+37. **GAP-18** — No `.user.ini` / `php.ini` auto_prepend_file scanning [MEDIUM]
 
 ---
 
@@ -381,3 +406,151 @@ Track work completed on this skill.
 - **Component**: `prescan/discovery.py:188`
 - **Description**: `discover_security_log_dirs()` uses `rglob('*')` with no file count limit. `MAX_SECURITY_LOG_FILES` (100) is defined in constants but not applied during discovery enumeration. A backup with a `wflogs/` dir containing millions of files → unbounded memory.
 - **Fix**: Apply `MAX_SECURITY_LOG_FILES` as a cap in the `rglob('*')` loop.
+
+---
+
+## Feature Gap Issues (2026-02-04)
+
+### GAP-01: No JavaScript Malware Detection [HIGH]
+
+- **Status**: Pending
+- **Severity**: High
+- **Component**: `prescan/scanners/php_patterns.py`, `prompts/phase-2-analysis.md`
+- **Description**: Only PHP files are pattern-scanned. JS-based attacks are increasingly common in WordPress: credit card skimmers (Magecart-style) injected into WooCommerce checkout JS, malicious redirects via injected `<script>` in theme JS files, cryptominers loaded via modified JS assets, and SEO spam injectors. The pre-scanner should scan `.js` files for suspicious patterns (eval, document.write, String.fromCharCode, obfuscated variable names, external script loading, fetch/XMLHttpRequest to unknown domains). A dedicated agent or extension to Agent 1 would analyze flagged JS files.
+- **Fix**: Add a JS pattern scanner module (`prescan/scanners/js_patterns.py`) with patterns for eval, document.write, String.fromCharCode, atob, unescape, obfuscated variable chains, external domain references, and known skimmer signatures. Output to `prescan-data/js-pattern-matches.json`. Extend Agent 1 or add a new agent to analyze JS findings.
+
+### GAP-02: No mu-plugins or Drop-in File Scanning [HIGH]
+
+- **Status**: Pending
+- **Severity**: High
+- **Component**: `prescan/scanners/suspicious_files.py`, `prompts/phase-2-analysis.md`
+- **Description**: `wp-content/mu-plugins/` files are auto-loaded on every request with no activation step — a prime malware hiding spot. WordPress drop-in files (`object-cache.php`, `advanced-cache.php`, `db.php`, `maintenance.php` in `wp-content/`) are also auto-loaded and commonly abused for persistence. Neither directory gets specific attention from any agent. The pre-scanner doesn't enumerate mu-plugins, and no agent is instructed to check for unexpected drop-in files.
+- **Fix**: (1) Add mu-plugins enumeration to discovery module — list all files in `wp-content/mu-plugins/`. (2) Add drop-in detection — check for known drop-in filenames (`object-cache.php`, `advanced-cache.php`, `db.php`, `maintenance.php`, `sunrise.php`, `blog-deleted.php`, `blog-inactive.php`, `blog-suspended.php`) in `wp-content/`. (3) Read contents of found files (truncated) into prescan output. (4) Extend Agent 2 or Agent 3 prompt to review mu-plugins and drop-ins for malicious content.
+
+### GAP-03: No Core File Hash Verification [HIGH]
+
+- **Status**: Pending
+- **Severity**: High
+- **Component**: `prescan/scanners/core_files.py`, `prompts/phase-2-analysis.md`
+- **Description**: The skill reads core files and checks for injections via pattern matching, but never verifies files against known-good checksums. WordPress provides an API (`https://api.wordpress.org/core/checksums/1.0/?version=X.Y&locale=en_US`) that returns MD5 hashes for every core file. Comparing actual file hashes against this API would instantly flag modified, added, or missing core files with zero false positives — far more reliable than heuristic pattern matching alone. This is the same technique used by `wp core verify-checksums`.
+- **Fix**: Add a core file hash verification module. During Phase 1, the orchestrator fetches checksums from the WordPress API via WebFetch. The pre-scanner (or a new Phase 1 step) computes MD5 hashes of all files in `wp-admin/` and `wp-includes/`. Compare against API checksums and report: modified files (hash mismatch), added files (not in checksums), and missing files (in checksums but absent). Output to `prescan-data/core-integrity.json`. Agent 3 uses this for ground-truth integrity analysis.
+
+### GAP-04: No Network IOC Extraction [HIGH]
+
+- **Status**: Pending
+- **Severity**: High
+- **Component**: `prescan/scanners/php_patterns.py`, `prescan/scanners/database.py`, `prompts/phase-4-report.md`
+- **Description**: Malicious code contains URLs, domains, and IP addresses (C2 servers, exfiltration endpoints, external script sources). The skill doesn't extract these as Indicators of Compromise. URLs/domains/IPs found in flagged PHP files, JS files, and database injections would provide actionable intelligence for firewall rules, DNS blocklists, and further investigation. Currently, the report lists findings but doesn't consolidate network indicators.
+- **Fix**: Add a post-processing pass in the pre-scanner that extracts URLs, domains, and IP addresses from all pattern-matched content (PHP snippets, DB context strings, error log entries). Deduplicate and output to `prescan-data/network-iocs.json`. Add an IOC summary section to the final report with unique domains, IPs, and URLs found in malicious context. Filter out known-legitimate domains (wordpress.org, googleapis.com, etc.).
+
+### GAP-05: No Web Server Access Log Analysis [HIGH]
+
+- **Status**: Pending
+- **Severity**: High
+- **Component**: `prescan/discovery.py`, `prescan/scanners/`, `prompts/phase-2-analysis.md`
+- **Description**: Apache/Nginx access logs reveal exploit request URLs (e.g., `POST /wp-admin/admin-ajax.php` with unusual parameters), brute force login patterns, file upload attempts, attacker IP addresses and user agents, timing of first compromise access, and requests to known malware paths (e.g., `GET /wp-content/uploads/shell.php`). These are commonly included in backups as `access.log`, `access_log`, `access.log.gz`, or in a `logs/` directory. The skill currently scans PHP error logs and security plugin logs but not web server access logs.
+- **Fix**: Add access log discovery to `discovery.py` (common paths: `logs/access.log`, `access_log`, `access.log.*`, hosting-specific locations). Add a new scanner module (`prescan/scanners/access_logs.py`) that parses Apache/Nginx combined log format and extracts: requests to suspicious paths (uploads/*.php, known malware filenames), POST requests to admin-ajax.php and xmlrpc.php, 4xx/5xx responses to WP files, requests from IPs found in other IOCs, and user agent anomalies. Output to `prescan-data/access-logs.json`. Add a new agent or extend Agent 6 to analyze access log findings.
+
+### GAP-06: No File Entropy Analysis [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `prescan/scanners/php_patterns.py`
+- **Description**: Heavily obfuscated PHP (hex-encoded, base64-encoded, compressed) has measurably higher Shannon entropy than normal code. A quick entropy calculation on PHP files would flag obfuscated files that bypass pattern matching — especially useful for novel malware that doesn't match known signatures. Normal PHP code typically has entropy of 4.5-5.5 bits/byte; obfuscated code often exceeds 6.0.
+- **Fix**: Add Shannon entropy calculation to the PHP pattern scanner. For each PHP file, compute entropy over the file content. Flag files with entropy > 6.0 bits/byte (tunable threshold) in `php-pattern-matches.json` with a new category "high_entropy". Include the entropy value so Agent 1 can assess whether it's legitimate minification or obfuscation.
+
+### GAP-07: No Image/Media Polyglot Detection Beyond .ico [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `prescan/scanners/suspicious_files.py`
+- **Description**: The skill detects PHP code in `.ico` files, but attackers also embed PHP in EXIF metadata of `.jpg`/`.png`/`.gif` files, or create polyglot files with image extensions that are actually PHP. The `@include` technique often references image files containing PHP code. Scanning common image file types in the uploads directory for PHP opening tags (`<?php`, `<?=`, `<? `) would catch this class of attack.
+- **Fix**: Extend `scan_suspicious_files()` to check image files (`.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.svg`) in `wp-content/uploads/` for PHP opening tags. Read the first 8KB of each image file and check for `<?php`, `<?=`, or `<? ` (with space). Also check `.svg` files for `<script` tags (SVG-based XSS). Add findings to `suspicious-files.json` under a new "image_polyglot" category.
+
+### GAP-08: No User Role/Capability Tampering Detection [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `prescan/scanners/database.py`, `prompts/phase-2-analysis.md` — Agent 9
+- **Description**: Agent 9 extracts admin users from `wp_usermeta` capabilities, but doesn't check for: custom roles with elevated capabilities (e.g., a "subscriber" role granted `edit_plugins` or `upload_files`), modified capability arrays in the `wp_user_roles` option, hidden admin accounts with non-obvious usernames, or users with `administrator` capabilities who aren't in the expected admin list. Attackers commonly escalate an existing low-privilege account or create a backdoor user with a benign-looking username.
+- **Fix**: Extract the full `wp_user_roles` option from the database and include it in `database.json`. Instruct Agent 9 to compare role definitions against WordPress defaults (subscriber, contributor, author, editor, administrator) and flag any custom roles or modified capability sets. Also flag users whose capabilities include admin-level permissions (`manage_options`, `edit_plugins`, `edit_themes`, `install_plugins`) but whose role name suggests lower privilege.
+
+### GAP-09: No Cron Job Callback Analysis [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `prescan/scanners/database.py`, `prompts/phase-2-analysis.md` — Agent 9
+- **Description**: The DB scanner extracts cron entries, but no agent analyzes what the scheduled callbacks actually do. Malware commonly installs WP-Cron jobs that re-infect cleaned files, send spam, phone home to C2 servers, or create new admin accounts. Cross-referencing cron callback function names against known WordPress core and plugin hooks vs. unknown/suspicious function names would identify malicious scheduled tasks. Cron entries with suspiciously frequent intervals or callbacks to non-standard functions are red flags.
+- **Fix**: Instruct Agent 9 to cross-reference cron callback names against: (1) known WP core cron hooks (`wp_version_check`, `wp_update_plugins`, `wp_scheduled_delete`, etc.), (2) common plugin cron hooks (identifiable by plugin prefix), (3) unknown/custom callbacks. Flag callbacks that don't match any known pattern. Also flag cron entries with very frequent recurrence (more often than hourly) or timestamps far in the past (stale/abandoned).
+
+### GAP-10: No File Encoding Anomaly Detection [LOW]
+
+- **Status**: Pending
+- **Severity**: Low
+- **Component**: `prescan/scanners/php_patterns.py`
+- **Description**: Files with BOM markers (byte order marks), UTF-16 encoding, or null bytes can evade pattern scanners that assume UTF-8. A PHP file encoded as UTF-16 would bypass all regex pattern matching but still execute normally on many PHP configurations. Files with null bytes can also confuse scanners. Detecting non-UTF-8 PHP files or files with null bytes would flag potential evasion attempts.
+- **Fix**: In the PHP pattern scanner, before reading file content, check the first few bytes for BOM markers (UTF-8 BOM `\xef\xbb\xbf`, UTF-16 LE `\xff\xfe`, UTF-16 BE `\xfe\xff`) and null bytes in the first 1KB. Flag any PHP file with non-standard encoding in `php-pattern-matches.json` under a new "encoding_anomaly" category.
+
+### GAP-11: No Delta/Comparison Scanning Between Two Backups [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: Architecture — new mode
+- **Description**: No ability to compare two backups (e.g., pre-compromise vs. post-compromise, or last-known-good vs. current) to identify exactly what changed. This would dramatically simplify incident response for sites with multiple backups. Currently each backup is scanned in isolation. A diff mode showing added, removed, and modified files between two backup snapshots would pinpoint the compromise window and identify all attacker-created or modified files.
+- **Fix**: Add an optional second argument to the skill invocation for a reference backup path. Add a new pre-scanner module that compares file trees (file list diff, modification time diff, content hash diff for changed files). Output to `prescan-data/delta-analysis.json` with lists of added/removed/modified files. Add a new agent or extend Agent 5 to analyze the delta for compromise indicators. This is a significant architectural addition — consider as a separate phase or mode.
+
+### GAP-12: No Plugin/Theme File Inventory Comparison Against wordpress.org [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `prescan/scanners/`, `prompts/phase-3-vulns.md`
+- **Description**: The wordpress.org plugin/theme API can provide file listings and checksums for known plugins and themes. Comparing the actual files in a plugin directory against the expected files would reveal injected files hiding inside legitimate plugin directories — a very common malware technique (e.g., adding `cache.php` or `class-wp-tmp.php` inside `wp-content/plugins/akismet/`). Currently the skill only checks plugin versions and CVEs, not file-level integrity.
+- **Fix**: During Phase 3 CVE checks, also fetch plugin checksums from `https://downloads.wordpress.org/plugin-checksums/{slug}/{version}.json` (where available). Compare against actual files. Report added files (not in checksums), modified files (hash mismatch), and missing files. Flag added PHP files in plugin directories as high-severity since they indicate direct file injection. Note: not all plugins have checksums available via this API — only those hosted on wordpress.org.
+
+### GAP-13: No Machine-Readable (JSON) Report Output [LOW]
+
+- **Status**: Pending
+- **Severity**: Low
+- **Component**: `prompts/phase-4-report.md`
+- **Description**: The final report is Markdown only (`malware-scan-report.md`). A JSON companion report would enable integration with ticketing systems, SIEMs, dashboards, or automated remediation pipelines. Structured data (finding severity, file paths, CVE IDs, IOCs) is easier to consume programmatically than parsing Markdown tables.
+- **Fix**: Add a parallel JSON output step in Phase 4. The report compiler (or orchestrator) writes `malware-scan-report.json` alongside the Markdown report, containing structured data: verdict, findings array (each with severity, category, file, description), CVEs, IOCs, timeline events, and remediation items.
+
+### GAP-14: No YARA Rule Support [LOW]
+
+- **Status**: Pending
+- **Severity**: Low
+- **Component**: `prescan/scanners/php_patterns.py`
+- **Description**: YARA is the industry standard for malware signatures. The security community maintains extensive YARA rule sets for WordPress malware (e.g., from Wordfence, Sucuri, MalCare research). Supporting custom YARA rules would let users leverage existing rule sets and add their own signatures without modifying the pre-scanner code. Currently all detection is via hardcoded Python regex patterns.
+- **Fix**: Add optional YARA scanning when `yara-python` is installed. Accept a `--yara-rules` argument pointing to a `.yar` file or directory. Run YARA scan in parallel with regex scanning. Output YARA matches to `prescan-data/yara-matches.json`. Fall back gracefully to regex-only scanning when `yara-python` is not available. This keeps the "no external dependencies" constraint as the default while enabling advanced use.
+
+### GAP-15: No Scan Resumability After Partial Failure [LOW]
+
+- **Status**: Pending
+- **Severity**: Low
+- **Component**: `prompts/preamble.md`, `prompts/error-handling.md`
+- **Description**: If the scan fails partway through (agent error, token limit hit, network timeout during CVE lookups), there's no way to resume. Pre-scan data persists on disk, but all agent analysis must restart from scratch. For large sites with many plugins, Phase 3 CVE lookups alone can involve 5+ parallel agents and take significant time/cost. Re-running the entire scan wastes both.
+- **Fix**: Add resume capability: (1) Pre-scanner already writes output files — check for existing `prescan-data/` and skip re-scanning if present (add `--force` flag to override). (2) Before launching Phase 2 agents, check for existing `scan-results/agent-*.md` files and skip agents whose output already exists. (3) Phase 3 similarly checks for existing CVE reports. (4) Only Phase 4 (report compilation) always re-runs to incorporate any new findings. Add a `--resume` flag or auto-detect existing output.
+
+### GAP-16: No Known Malware Hash Database [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `prescan/scanners/php_patterns.py`
+- **Description**: No comparison of file hashes against known malware samples. Even a small bundled hash set of common WordPress webshells (WSO, FilesMan, b374k, c99, r57, Alfa Shell, etc.) would provide high-confidence detection with zero false positives. Hash matching is computationally trivial and complements pattern matching by catching exact known samples that might have been obfuscated to evade regex patterns.
+- **Fix**: Bundle a `known-malware-hashes.json` file with MD5/SHA256 hashes of common WordPress webshells and malware samples. During PHP pattern scanning, compute the file hash and check against the database. Report exact matches with the malware family name. Provide a mechanism to update the hash database independently of the skill code (e.g., a separate data file that can be replaced).
+
+### GAP-17: No Remediation File Manifest [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `prompts/phase-4-report.md`
+- **Description**: The report lists findings and recommendations but doesn't produce a structured list of specific actions: which files to delete, which files to restore from clean source, which database rows to clean, which user accounts to remove. A remediation manifest would make cleanup actionable without requiring the site owner to manually cross-reference findings with file paths.
+- **Fix**: Add a "Remediation Manifest" section to the final report (or a separate `remediation-manifest.md` file) containing: (1) files to delete (confirmed malware, with paths), (2) files to restore from clean WordPress core (modified core files, with paths), (3) database entries to review/clean (injected options, suspicious users), (4) plugins to update or remove (vulnerable versions), (5) credentials to rotate (if wp-config.php was compromised). Each item should reference the finding that triggered it.
+
+### GAP-18: No `.user.ini` / `php.ini` Auto-Prepend Scanning [MEDIUM]
+
+- **Status**: Pending
+- **Severity**: Medium
+- **Component**: `prescan/scanners/core_files.py`, `prescan/scanners/suspicious_files.py`
+- **Description**: `.user.ini` files can set `auto_prepend_file` or `auto_append_file` to silently load malware on every PHP request — a known persistence mechanism that survives file cleanups if not specifically addressed. Similarly, `php.ini` files in the web root or subdirectories can set these directives. These files are not currently scanned by the pre-scanner or flagged by any agent. The `.htaccess` scanner covers Apache `php_value auto_prepend_file` directives, but the equivalent `.user.ini` mechanism (used on nginx and PHP-FPM setups) is missed entirely.
+- **Fix**: (1) Add `.user.ini` and `php.ini` to the core files scanner — enumerate all instances via `rglob('.user.ini')` and `rglob('php.ini')`. (2) Read content and flag any `auto_prepend_file`, `auto_append_file`, `include_path`, or `open_basedir` directives. (3) If `auto_prepend_file` or `auto_append_file` point to a file, cross-reference with suspicious files findings. (4) Add to Agent 3's prompt to treat these directives as high-priority indicators of persistence.
