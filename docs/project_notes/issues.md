@@ -18,10 +18,6 @@ Track work completed on this skill.
 1. **SEC-01** — Prompt injection via scanned content (most complex)
 2. **SEC-03** — Backup directory contamination (write output outside backup)
 3. **SEC-09** — Command substitution risk in $ARGUMENTS (verification task)
-4. **DB-04** — No whitespace-obfuscated payload detection
-5. **SCAN-02** — No Wordfence/security plugin log analysis
-6. **SCAN-03** — No multisite/subsite detection
-7. **SCAN-04** — No @include detection in wp-config.php
 
 ---
 
@@ -115,7 +111,7 @@ Track work completed on this skill.
 
 ### DB-04: No Detection of Whitespace-Obfuscated Payloads [LOW]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Low
 - **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`
 - **Description**: The `4r4r.js` injection was hidden behind ~60 empty `\r\n` lines to push it below the visible area in the WPCode admin textarea. While the `<script>` pattern should catch the tag itself (if DB-01 doesn't suppress it), there's no specific detection for this obfuscation technique. Flagging "active content preceded by excessive whitespace" would catch this class of attack and provide useful context to the analysis agent about the attacker's intent to hide the payload.
@@ -131,7 +127,7 @@ Track work completed on this skill.
 
 ### SCAN-02: No Wordfence / Security Plugin Log Analysis [HIGH]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: High
 - **Component**: `wp-malware-prescan.py`, `prompt.md`
 - **Description**: Security plugins like Wordfence write access logs, firewall logs, and attack data to `wp-content/wflogs/`. In the reference scan, Wordfence logs confirmed the `4r4r.js` injection was actively executing (a 404 hit for `/4r4r.js` from IP `159.26.106.157`). Other security plugins (Sucuri, Shield, MalCare) also write logs. The skill doesn't scan any of these directories. These logs can provide IP addresses of attackers, blocked attack attempts, firewall rule changes, and evidence of security plugin tampering.
@@ -139,7 +135,7 @@ Track work completed on this skill.
 
 ### SCAN-03: No Multisite / Subsite Detection [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`
 - **Description**: WordPress multisite installations use `wp_N_*` table prefixes for subsites (e.g., `wp_2_options`, `wp_3_posts`). The pre-scanner only extracts options from the main `_options` table and doesn't detect or analyze subsite tables. In the reference scan, a `wp_2_options` subsite was found with: a suspicious admin email (`92juber.shaikh@gmail.com`) unrelated to any known user, an active `wp-file-manager` v8.0.2 (CVE-2020-25213, CVSS 10.0 unauthenticated RCE), URL misconfiguration, a different theme from the main site, and stale cron jobs from 2019. Abandoned subsites with vulnerable plugins are a common attack vector.
@@ -147,7 +143,7 @@ Track work completed on this skill.
 
 ### SCAN-04: No @include Detection in wp-config.php [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `prompt.md` — Agent 3 (Core File Integrity)
 - **Description**: The `@include` directive in wp-config.php is a classic malware persistence technique — it silently loads external PHP files before WordPress bootstraps. In the reference scan, a `@include` for `bv-preload.php` (MalCare error monitoring preloader) was found in wp-config.php. While this particular instance was legitimate, the same technique is used by WP-VCD and other malware families to load backdoors from wp-content or other non-standard locations. Agent 3 reads wp-config.php content but the prompt doesn't specifically instruct it to flag `@include`, `include`, `require`, or `require_once` directives pointing to non-standard files.
