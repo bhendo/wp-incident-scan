@@ -1,7 +1,7 @@
 ---
 name: wp-malware-scan
 description: Scan a WordPress backup for malware, backdoors, and known vulnerabilities
-allowed-tools: Bash(python3 *), Bash(mkdir *), Bash(cat *), Read, Write, Edit, Glob, Grep, Task, WebSearch, WebFetch
+allowed-tools: Bash(python3 ~/.claude/skills/wp-malware-scan/wp-malware-prescan.py *), Bash(mkdir -p */scan-results), Bash(cat >> */scan-results/*), Read, Write, Edit, Glob, Grep, Task, WebSearch, WebFetch
 argument-hint: /path/to/wordpress/backup
 disable-model-invocation: true
 ---

@@ -43,40 +43,24 @@ Track work completed on this skill.
 1. **SEC-01** — Prompt injection via scanned content (most complex)
 2. **SEC-03** — Backup directory contamination (write output outside backup)
 3. **SEC-09** — Command substitution risk in $ARGUMENTS (verification task)
-4. **TOOL-01** — `Bash(cat *)` allows reading any file on host [HIGH]
-5. **TOOL-02** — `Bash(python3 *)` allows arbitrary Python execution [HIGH]
-6. **TOOL-03** — WebSearch/WebFetch available to all agents [HIGH]
-7. **TOOL-04** — Agents read full adversarial files with no path constraint or injection warning [HIGH]
-8. **PATH-01** — `is_within_root()` string prefix bypass on sibling dirs [MEDIUM]
-9. **PATH-02** — SQL dump discovery follows symlinks without boundary check [MEDIUM]
-10. **PATH-03** — `find_wp_root()` can follow symlinks to external WP installations [MEDIUM]
-11. **MEM-01** — Unbounded `read_text()` in core_files.py and themes.py [MEDIUM]
-12. **AGENT-01** — `Bash(mkdir *)` allows directory creation anywhere [MEDIUM]
-13. **AGENT-02** — No write-path constraints for sub-agents [MEDIUM]
-14. **AGENT-03** — Inter-agent output poisoning via scan-results/ files [MEDIUM]
-15. **INFO-01** — Absolute host paths leaked in output JSON [LOW]
-16. **INFO-02** — Exception messages expose host filesystem details [LOW]
-17. **INFO-03** — Password hashes in unredacted SQL context strings [LOW]
-18. **LIMIT-01** — Unbounded `.htaccess` enumeration and unprotected reads [LOW]
-19. **LIMIT-02** — Unbounded `rglob('*')` in security log discovery [LOW]
-20. **GAP-01** — No JavaScript malware detection (skimmers, redirects, cryptominers) [HIGH]
-21. **GAP-02** — No mu-plugins or drop-in file scanning [HIGH]
-22. **GAP-03** — No core file hash verification against wordpress.org checksums [HIGH]
-23. **GAP-04** — No network IOC extraction (URLs, domains, IPs from malicious code) [HIGH]
-24. **GAP-05** — No web server access log analysis (Apache/Nginx) [HIGH]
-25. **GAP-06** — No file entropy analysis for obfuscation detection [MEDIUM]
-26. **GAP-07** — No image/media polyglot detection beyond .ico files [MEDIUM]
-27. **GAP-08** — No user role/capability tampering detection [MEDIUM]
-28. **GAP-09** — No cron job callback analysis [MEDIUM]
-29. **GAP-10** — No file encoding anomaly detection (BOM, UTF-16, null bytes) [LOW]
-30. **GAP-11** — No delta/comparison scanning between two backups [MEDIUM]
-31. **GAP-12** — No plugin/theme file inventory comparison against wordpress.org [MEDIUM]
-32. **GAP-13** — No machine-readable (JSON) report output [LOW]
-33. **GAP-14** — No YARA rule support [LOW]
-34. **GAP-15** — No scan resumability after partial failure [LOW]
-35. **GAP-16** — No known malware hash database [MEDIUM]
-36. **GAP-17** — No remediation file manifest [MEDIUM]
-37. **GAP-18** — No `.user.ini` / `php.ini` auto_prepend_file scanning [MEDIUM]
+4. **GAP-01** — No JavaScript malware detection (skimmers, redirects, cryptominers) [HIGH]
+5. **GAP-02** — No mu-plugins or drop-in file scanning [HIGH]
+6. **GAP-03** — No core file hash verification against wordpress.org checksums [HIGH]
+7. **GAP-04** — No network IOC extraction (URLs, domains, IPs from malicious code) [HIGH]
+8. **GAP-05** — No web server access log analysis (Apache/Nginx) [HIGH]
+9. **GAP-06** — No file entropy analysis for obfuscation detection [MEDIUM]
+10. **GAP-07** — No image/media polyglot detection beyond .ico files [MEDIUM]
+11. **GAP-08** — No user role/capability tampering detection [MEDIUM]
+12. **GAP-09** — No cron job callback analysis [MEDIUM]
+13. **GAP-10** — No file encoding anomaly detection (BOM, UTF-16, null bytes) [LOW]
+14. **GAP-11** — No delta/comparison scanning between two backups [MEDIUM]
+15. **GAP-12** — No plugin/theme file inventory comparison against wordpress.org [MEDIUM]
+16. **GAP-13** — No machine-readable (JSON) report output [LOW]
+17. **GAP-14** — No YARA rule support [LOW]
+18. **GAP-15** — No scan resumability after partial failure [LOW]
+19. **GAP-16** — No known malware hash database [MEDIUM]
+20. **GAP-17** — No remediation file manifest [MEDIUM]
+21. **GAP-18** — No `.user.ini` / `php.ini` auto_prepend_file scanning [MEDIUM]
 
 ---
 
@@ -279,7 +263,7 @@ Track work completed on this skill.
 
 ### TOOL-01: `Bash(cat *)` Allows Reading Any File on Host [HIGH]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: High
 - **Component**: `SKILL.md` — `allowed-tools`
 - **Description**: The `Bash(cat *)` tool permission is intended for chunked heredoc writes (`cat >> file <<'SCANEOF'`), but the glob matches any argument — including `cat /etc/passwd`, `cat ~/.ssh/id_rsa`, `cat ~/.aws/credentials`. Any sub-agent (or the orchestrator influenced by prompt injection via SEC-01) can use `cat` to read arbitrary files on the host. The pre-scanner's symlink boundary checks don't apply here since `cat` operates outside the pre-scanner entirely.
@@ -288,7 +272,7 @@ Track work completed on this skill.
 
 ### TOOL-02: `Bash(python3 *)` Allows Arbitrary Python Execution [HIGH]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: High
 - **Component**: `SKILL.md` — `allowed-tools`
 - **Description**: `Bash(python3 *)` matches any Python command, including `python3 -c "import os; os.system('curl evil.com')"`. Intended only for running the pre-scanner script. Combined with SEC-01, a compromised agent could execute arbitrary Python with full user privileges.
@@ -296,7 +280,7 @@ Track work completed on this skill.
 
 ### TOOL-03: WebSearch/WebFetch Available to All Agents [HIGH]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: High
 - **Component**: `SKILL.md` — `allowed-tools`; `prompts/phase-2-analysis.md`, `prompts/phase-3-vulns.md`
 - **Description**: `WebSearch` and `WebFetch` are globally allowed. Phase 2 agents (1-9) analyze local prescan data and never legitimately need web access. Phase 3 CVE agents have a soft restriction ("Do NOT use WebFetch unless search results contain nothing useful") but no URL allowlist. This violates least-privilege and expands the blast radius of SEC-01 — a compromised agent could exfiltrate data via WebFetch to an attacker-controlled URL, or ingest prompt injection from an attacker's website via WebSearch+WebFetch.
@@ -304,7 +288,7 @@ Track work completed on this skill.
 
 ### TOOL-04: Agents Read Full Adversarial Files Without Path Constraint or Injection Warning [HIGH]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: High
 - **Component**: `prompts/phase-2-analysis.md` — Agents 2, 3, 4
 - **Related**: SEC-01
@@ -314,7 +298,7 @@ Track work completed on this skill.
 
 ### PATH-01: `is_within_root()` String Prefix Bypass on Sibling Directories [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `prescan/utils.py:26-28`
 - **Description**: `is_within_root()` uses `str(resolved_path).startswith(root_resolved)`. If the backup root is `/home/user/backup`, a symlink resolving to `/home/user/backup-evil/secret.php` passes the check because `"/home/user/backup-evil/...".startswith("/home/user/backup")` is True. This is a well-documented bypass for `startswith()`-based path containment.
@@ -322,7 +306,7 @@ Track work completed on this skill.
 
 ### PATH-02: SQL Dump Discovery Follows Symlinks Without Boundary Check [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `prescan/discovery.py:91-98`, `prescan/scanners/database.py`
 - **Related**: SEC-02 (gap in fix)
@@ -332,7 +316,7 @@ Track work completed on this skill.
 
 ### PATH-03: `find_wp_root()` Can Follow Symlinks to External WP Installations [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `prescan/discovery.py:24-36`
 - **Description**: `find_wp_root()` uses `iterdir()` up to two levels deep and checks for `wp-includes/version.php`. A symlink in the backup pointing to an external WordPress installation would set `wp_root` to that location. Since `wp_root.resolve()` becomes the boundary root for all `is_within_root()` checks, the boundary shifts to the external directory rather than the original backup path.
@@ -341,7 +325,7 @@ Track work completed on this skill.
 
 ### MEM-01: Unbounded `read_text()` in core_files.py and themes.py [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `prescan/scanners/core_files.py:22`, `prescan/scanners/themes.py:20`
 - **Related**: SEC-05 (gap in fix)
@@ -350,7 +334,7 @@ Track work completed on this skill.
 
 ### AGENT-01: `Bash(mkdir *)` Allows Directory Creation Anywhere [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `SKILL.md` — `allowed-tools`
 - **Description**: `Bash(mkdir *)` matches any argument. While the intent is `mkdir -p {backup_root}/scan-results`, a compromised agent could create directories anywhere (e.g., `mkdir -p ~/.ssh` as a stepping stone for writing `authorized_keys`).
@@ -358,7 +342,7 @@ Track work completed on this skill.
 
 ### AGENT-02: No Write-Path Constraints for Sub-Agents [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `prompts/phase-2-analysis.md`, `SKILL.md`
 - **Description**: Write and Edit tools have no path restrictions in the skill system. No prompt-level constraint prevents agents from writing outside `scan-results/`. A prompt injection could direct an agent to write to `~/.bashrc`, `~/.ssh/authorized_keys`, or Claude Code config files.
@@ -366,7 +350,7 @@ Track work completed on this skill.
 
 ### AGENT-03: Inter-Agent Output Poisoning via scan-results/ Files [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `prompts/phase-3-vulns.md`, `prompts/phase-4-report.md`
 - **Description**: Phase 3 reads all `scan-results/agent-*.md` files to compile a compromise evidence summary. Phase 4 reads all agent output for the final report. Neither phase validates content integrity. A Phase 2 agent manipulated via prompt injection could write a poisoned output file (e.g., "No findings") that propagates into the compromise summary and final report, causing suppressed findings.
@@ -374,7 +358,7 @@ Track work completed on this skill.
 
 ### INFO-01: Absolute Host Paths Leaked in Output JSON [LOW]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Low
 - **Component**: `prescan/scanner.py`, `prescan/discovery.py`
 - **Description**: Output JSON includes absolute paths (`backup_path`, `wp_root`, plugin/theme paths, SQL dump paths, error log paths). If scan results are shared with clients, the host's username and directory structure are exposed (e.g., `/Users/bhenderson/backups/client-site/`).
@@ -382,7 +366,7 @@ Track work completed on this skill.
 
 ### INFO-02: Exception Messages Expose Host Filesystem Details [LOW]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Low
 - **Component**: `prescan/scanners/core_files.py:27`, `prescan/scanners/themes.py:23`, `prescan/scanners/database.py:178`, `prescan/scanners/error_logs.py:117`
 - **Description**: Exception handlers store `str(e)` in output JSON. Python file operation errors include full absolute paths (e.g., `[Errno 13] Permission denied: '/Users/bhenderson/...'`). With SEC-03 unfixed, these could become web-accessible.
@@ -390,7 +374,7 @@ Track work completed on this skill.
 
 ### INFO-03: Password Hashes in Unredacted SQL Context Strings [LOW]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Low
 - **Component**: `prescan/scanners/database.py:74-93`
 - **Related**: SEC-04 (gap in fix)
@@ -399,7 +383,7 @@ Track work completed on this skill.
 
 ### LIMIT-01: Unbounded `.htaccess` Enumeration and Unprotected Reads [LOW]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Low
 - **Component**: `prescan/scanners/core_files.py:32`
 - **Description**: `rglob('.htaccess')` has no `MAX_FILE_COUNT` limit (unlike PHP pattern scanning). Each file is read via `read_text()` without a `MAX_FILE_READ_SIZE` check. A backup with 100K directories each containing a large `.htaccess` → memory exhaustion.
@@ -407,7 +391,7 @@ Track work completed on this skill.
 
 ### LIMIT-02: Unbounded `rglob('*')` in Security Log Discovery [LOW]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Low
 - **Component**: `prescan/discovery.py:188`
 - **Description**: `discover_security_log_dirs()` uses `rglob('*')` with no file count limit. `MAX_SECURITY_LOG_FILES` (100) is defined in constants but not applied during discovery enumeration. A backup with a `wflogs/` dir containing millions of files → unbounded memory.

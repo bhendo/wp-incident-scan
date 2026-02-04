@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from prescan.constants import MAX_FILE_READ_SIZE
 from prescan.utils import is_within_root, truncate_content
 
 
@@ -17,10 +18,13 @@ def read_theme_functions(wp_root: Path, themes: list[dict]) -> dict:
                 if not is_within_root(resolved, wp_root_resolved):
                     results[theme['slug']] = 'SKIPPED: symlink points outside backup'
                     continue
+                if func_file.stat().st_size > MAX_FILE_READ_SIZE:
+                    results[theme['slug']] = f'SKIPPED: exceeds {MAX_FILE_READ_SIZE // (1024*1024)}MB limit'
+                    continue
                 content = func_file.read_text(errors='replace')
                 results[theme['slug']] = truncate_content(content)
             except Exception as e:
-                results[theme['slug']] = f'ERROR reading: {e}'
+                results[theme['slug']] = f'ERROR: {type(e).__name__}'
         else:
             results[theme['slug']] = 'NO functions.php'
     return results

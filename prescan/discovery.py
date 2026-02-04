@@ -11,6 +11,7 @@ from prescan.constants import (
     ERROR_LOG_GLOB_PATTERNS,
     ERROR_LOG_KNOWN_PATHS,
     MAX_LOG_FILES,
+    MAX_SECURITY_LOG_FILES,
     SECURITY_LOG_DIRS,
 )
 from prescan.utils import (
@@ -91,10 +92,16 @@ def get_theme_info(theme_dir: Path) -> dict:
 def find_sql_dumps(backup_path: Path) -> list[str]:
     """Find all .sql and .sql.gz files in the backup."""
     dumps = []
-    for f in backup_path.rglob('*.sql'):
-        dumps.append(str(f))
-    for f in backup_path.rglob('*.sql.gz'):
-        dumps.append(str(f))
+    backup_resolved = str(backup_path.resolve())
+    for pattern in ('*.sql', '*.sql.gz'):
+        for f in backup_path.rglob(pattern):
+            try:
+                resolved = f.resolve(strict=True)
+            except (OSError, RuntimeError):
+                continue
+            if not is_within_root(resolved, backup_resolved):
+                continue
+            dumps.append(str(f))
     return sorted(dumps)
 
 
@@ -184,8 +191,12 @@ def discover_security_log_dirs(wp_root: Path) -> list[dict]:
 
         files = []
         total_size = 0
+        file_count = 0
         try:
             for f in sorted(candidate.rglob('*')):
+                file_count += 1
+                if file_count > MAX_SECURITY_LOG_FILES:
+                    break
                 if f.is_file() and is_within_root(f.resolve(), wp_root_resolved):
                     try:
                         size = f.stat().st_size

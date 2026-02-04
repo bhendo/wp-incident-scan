@@ -48,6 +48,15 @@ def main():
     if not wp_root:
         print('Error: Could not find WordPress root (no wp-includes/version.php)', file=sys.stderr)
         sys.exit(1)
+
+    # PATH-03: Verify resolved wp_root is within backup_path (symlink escape guard)
+    wp_root_resolved = str(wp_root.resolve())
+    backup_resolved = str(backup_path.resolve())
+    if not (wp_root_resolved == backup_resolved or wp_root_resolved.startswith(backup_resolved + os.sep)):
+        print(f'Error: WordPress root resolves outside backup directory. '
+              f'Possible symlink escape.', file=sys.stderr)
+        sys.exit(1)
+
     print(f'    WordPress root: {wp_root}', file=sys.stderr)
 
     wp_version = get_wp_version(wp_root)
@@ -79,12 +88,39 @@ def main():
     sql_dumps = find_sql_dumps(backup_path)
     print(f'    SQL dumps found: {len(sql_dumps)}', file=sys.stderr)
 
+    # INFO-01: Relativize paths in discovery output to avoid leaking host paths
+    try:
+        wp_root_rel = str(wp_root.relative_to(backup_path))
+    except ValueError:
+        wp_root_rel = '.'
+
+    def _relativize_path(abs_path: str) -> str:
+        """Convert absolute path to relative (based on backup_path)."""
+        try:
+            return str(Path(abs_path).relative_to(backup_path))
+        except ValueError:
+            return abs_path
+
+    plugins_rel = []
+    for p in plugins:
+        pr = dict(p)
+        pr['path'] = _relativize_path(pr['path'])
+        plugins_rel.append(pr)
+
+    themes_rel = []
+    for t in themes:
+        tr = dict(t)
+        tr['path'] = _relativize_path(tr['path'])
+        themes_rel.append(tr)
+
+    sql_dumps_rel = [_relativize_path(d) for d in sql_dumps]
+
     discovery = {
         'wp_version': wp_version,
-        'plugins': plugins,
-        'themes': themes,
+        'plugins': plugins_rel,
+        'themes': themes_rel,
         'mu_plugins': mu_plugins,
-        'sql_dumps': sql_dumps,
+        'sql_dumps': sql_dumps_rel,
     }
     write_section(data_dir, 'discovery', discovery)
 
@@ -127,11 +163,11 @@ def main():
           f'{sec_entries} entries extracted', file=sys.stderr)
     write_section(data_dir, 'security-logs', security_logs)
 
-    # Database scans
+    # Database scans (use absolute paths for reading, relative for output keys)
     db_results = {}
     for i, dump in enumerate(sql_dumps):
         print(f'[*] Scanning SQL dump: {dump}...', file=sys.stderr)
-        db_results[dump] = scan_sql_dump(dump)
+        db_results[_relativize_path(dump)] = scan_sql_dump(dump)
     write_section(data_dir, 'database', db_results)
 
     # Write index file (lightweight — just metadata and file references)
@@ -150,8 +186,8 @@ def main():
     index = {
         '_meta': {
             'scan_time': datetime.now().isoformat(),
-            'backup_path': str(backup_path),
-            'wp_root': str(wp_root),
+            'backup_path': '.',
+            'wp_root': wp_root_rel,
             'sensitive_data_notice': (
                 'Output files may contain fragments of sensitive data in pattern matches '
                 'and content snippets (e.g., partial credentials, email fragments, password hashes). '
