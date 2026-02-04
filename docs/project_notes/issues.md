@@ -218,7 +218,7 @@ Prioritized fix order for remaining pending issues:
 
 ### REFACTOR-02: Modularize wp-malware-prescan.py into package [MEDIUM]
 
-- **Status**: Pending
+- **Status**: Completed (2026-02-04)
 - **Severity**: Medium
 - **Component**: `wp-malware-prescan.py`
 - **Description**: 1302-line monolithic script with all constants, helpers, scanners, and orchestration in one file. Hard to navigate, test, and extend with new scan sections.
