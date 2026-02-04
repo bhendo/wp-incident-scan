@@ -27,7 +27,7 @@ def read_core_files(wp_root: Path) -> dict:
                     content = redact_wp_config(content)
                 core[relpath] = truncate_content(content)
             except Exception as e:
-                core[relpath] = f'ERROR reading: {e}'
+                core[relpath] = f'ERROR: {type(e).__name__}'
         else:
             core[relpath] = 'FILE NOT FOUND'
 
@@ -50,6 +50,6 @@ def read_core_files(wp_root: Path) -> dict:
                 content = htaccess.read_text(errors='replace')
                 core[rel] = truncate_content(content)
             except Exception as e:
-                core[rel] = f'ERROR reading: {e}'
+                core[rel] = f'ERROR: {type(e).__name__}'
 
     return core

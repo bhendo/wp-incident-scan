@@ -24,7 +24,7 @@ def read_theme_functions(wp_root: Path, themes: list[dict]) -> dict:
                 content = func_file.read_text(errors='replace')
                 results[theme['slug']] = truncate_content(content)
             except Exception as e:
-                results[theme['slug']] = f'ERROR reading: {e}'
+                results[theme['slug']] = f'ERROR: {type(e).__name__}'
         else:
             results[theme['slug']] = 'NO functions.php'
     return results

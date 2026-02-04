@@ -13,6 +13,16 @@ from prescan.constants import (
 )
 from prescan.utils import redact_email
 
+_PASSWORD_HASH_RE = re.compile(
+    r'\$P\$[A-Za-z0-9./]{31}'
+    r'|\$2[aby]?\$\d{2}\$[A-Za-z0-9./]{53}'
+)
+
+
+def _redact_password_hashes(text: str) -> str:
+    """Replace WordPress password hash patterns with [HASH_REDACTED] (INFO-03)."""
+    return _PASSWORD_HASH_RE.sub('[HASH_REDACTED]', text)
+
 
 def scan_sql_dump(dump_path: str) -> dict:
     """Scan SQL dump for suspicious patterns and extract structural data.
@@ -89,7 +99,7 @@ def scan_sql_dump(dump_path: str) -> dict:
                             'line': line_num,
                             'table': current_table,
                             'pattern': label,
-                            'context': line[cs:ce].strip(),
+                            'context': _redact_password_hashes(line[cs:ce].strip()),
                         })
 
                 # User extraction
@@ -175,6 +185,6 @@ def scan_sql_dump(dump_path: str) -> dict:
                     })
 
     except Exception as e:
-        results['error'] = str(e)
+        results['error'] = f'{type(e).__name__}: {os.path.basename(dump_path)}'
 
     return results

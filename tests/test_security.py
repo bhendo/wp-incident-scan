@@ -105,5 +105,28 @@ class TestResourceLimits(unittest.TestCase):
         self.assertEqual(MAX_SECURITY_LOG_FILES, 100)
 
 
+class TestDataRedaction(unittest.TestCase):
+    def test_phpass_hash_redacted(self):
+        """INFO-03: WordPress phpass hashes must be redacted."""
+        from prescan.scanners.database import _redact_password_hashes
+        text = "VALUES (1,'admin','$P$BxQy1z2a3b4c5d6e7f8g9h0ijklmnop','admin@ex.com')"
+        result = _redact_password_hashes(text)
+        self.assertNotIn('$P$B', result)
+        self.assertIn('[HASH_REDACTED]', result)
+
+    def test_bcrypt_hash_redacted(self):
+        from prescan.scanners.database import _redact_password_hashes
+        text = "VALUES (1,'admin','$2y$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234','a@b.com')"
+        result = _redact_password_hashes(text)
+        self.assertNotIn('$2y$', result)
+        self.assertIn('[HASH_REDACTED]', result)
+
+    def test_non_hash_preserved(self):
+        from prescan.scanners.database import _redact_password_hashes
+        text = "VALUES (1,'admin','regular_value','admin@example.com')"
+        result = _redact_password_hashes(text)
+        self.assertEqual(text, result)
+
+
 if __name__ == '__main__':
     unittest.main()

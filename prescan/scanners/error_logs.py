@@ -114,7 +114,7 @@ def scan_error_logs(wp_root: Path) -> dict:
 
             total_bytes_read += bytes_this_file
         except (PermissionError, OSError) as e:
-            file_record['status'] = f'error: {e}'
+            file_record['status'] = f'error: {type(e).__name__}'
             result['log_files'].append(file_record)
             continue
 
