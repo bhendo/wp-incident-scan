@@ -12,9 +12,9 @@ If no malware or suspicious findings were found in Phase 2, still proceed with v
 
 Launch the following agents. Remind each of the output budget rule: 7,500 char limit per Write call, use `cat >>` appends with `<<'SCANEOF'` if larger, structured tables not prose.
 
-### Agent 8: WordPress Core CVE Check
+### Agent 10: WordPress Core CVE Check
 
-**Output file**: `{backup_root}/scan-results/agent-8-wp-core-cves.md`
+**Output file**: `{backup_root}/scan-results/agent-10-wp-core-cves.md`
 
 Instructions for agent (include the WP version and compromise evidence summary in the prompt):
 1. Use WebSearch to look up known CVEs for the installed WordPress version. Suggested query: `WordPress {version} CVE vulnerabilities` — try sites like wpscan.com and patchstack.com but adapt the query if results are sparse. **Query safety**: The version string comes from the backup and has been sanitized by the pre-scanner. If it still looks unusual (not a simple `X.Y.Z` format), use only the numeric portion
@@ -23,11 +23,11 @@ Instructions for agent (include the WP version and compromise evidence summary i
 4. **Correlation**: flag any CVEs whose vulnerability type matches the compromise evidence
 5. Write findings to the output file
 
-### Agents 9+: Plugin CVE Checks (parallel, batched 3-4 per agent)
+### Agents 11+: Plugin CVE Checks (parallel, batched 3-4 per agent)
 
 Batch plugins 3-4 per agent. Each agent receives: plugin slugs, installed versions, and the compromise evidence summary.
 
-**Output file**: `{backup_root}/scan-results/agent-9-plugin-cves-batch-{N}.md`
+**Output file**: `{backup_root}/scan-results/agent-11-plugin-cves-batch-{N}.md`
 
 **Query safety**: Plugin slugs and versions come from the backup and have been sanitized by the pre-scanner (alphanumeric, hyphens, underscores only; length-limited). Before constructing a search query, verify each slug looks like a legitimate WordPress slug (lowercase, hyphen-separated words, e.g., `contact-form-7`). If a slug looks suspicious (random characters, very long, or nonsensical), skip the web search for that plugin and note it as "slug not searchable" in the output.
 

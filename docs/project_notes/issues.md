@@ -73,8 +73,8 @@ Track work completed on this skill.
 
 - **Status**: Completed (2026-02-03)
 - **Severity**: Low
-- **Component**: `wp-malware-prescan.py`, `prompt.md` — Agents 8, 9+
-- **Description**: Agents 9+ construct WebSearch queries using plugin slugs and version numbers extracted from the backup. A malicious backup could include a plugin with a crafted slug/name designed to produce misleading search results or lead to attacker-controlled content when searched.
+- **Component**: `wp-malware-prescan.py`, `prompt.md` — Agents 10, 11+
+- **Description**: Agents 11+ construct WebSearch queries using plugin slugs and version numbers extracted from the backup. A malicious backup could include a plugin with a crafted slug/name designed to produce misleading search results or lead to attacker-controlled content when searched.
 - **Fix**: Added `sanitize_slug()`, `sanitize_version()`, and `sanitize_name()` to the pre-scanner. Slugs are restricted to alphanumeric/hyphen/underscore characters and length-limited (100 chars). Versions are validated against a numeric pattern (30 chars max). Names have control characters stripped (200 chars max). Updated `prompt.md` to instruct agents to use only sanitized slugs (never display names) in queries, and to skip plugins with suspicious-looking slugs.
 
 ### SEC-08: Potential ReDoS in Regex Patterns [LOW]
@@ -107,7 +107,7 @@ Track work completed on this skill.
 - **Severity**: Medium
 - **Component**: `wp-malware-prescan.py` — `scan_sql_dump()`, `target_options` set (line ~652)
 - **Description**: The `target_options` set extracts 11 specific options but misses options commonly abused for script injection. The `ihaf_insert_header`/`ihaf_insert_footer` options (WPCode / Insert Headers and Footers plugin) are prime injection targets because they output directly into every page's `<head>` or footer. Other commonly abused options include custom CSS/JS options and tracking code options from various plugins.
-- **Fix**: Add a regex-based extraction pass that captures any option whose name matches injection-prone patterns: `insert_header`, `insert_footer`, `tracking_code`, `custom_css`, `custom_js`, `head_script`, `body_script`, `header_code`, `footer_code`, etc. Extract and include these values in the database JSON so Agent 6 can review them.
+- **Fix**: Add a regex-based extraction pass that captures any option whose name matches injection-prone patterns: `insert_header`, `insert_footer`, `tracking_code`, `custom_css`, `custom_js`, `head_script`, `body_script`, `header_code`, `footer_code`, etc. Extract and include these values in the database JSON so Agent 8 can review them.
 
 ### DB-04: No Detection of Whitespace-Obfuscated Payloads [LOW]
 

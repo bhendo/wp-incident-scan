@@ -15,7 +15,7 @@
 **Files:**
 - Modify: `prescan/constants.py:98-110` (add pattern to `DB_SUSPICIOUS_PATTERNS`)
 - Modify: `prescan/scanners/database.py:72-92` (add post-match whitespace check)
-- Modify: `prompts/phase-2-analysis.md:119-129` (update Agent 6 instructions)
+- Modify: `prompts/phase-2-analysis.md:119-129` (update Agent 8 instructions)
 
 This is the simplest change — a new pattern + context annotation in the existing DB scanner.
 
@@ -34,9 +34,9 @@ In `prescan/constants.py`, add a new entry to `DB_SUSPICIOUS_PATTERNS` after the
 Run: `python3 /Users/bhenderson/.claude/skills/wp-malware-scan/wp-malware-prescan.py /path/to/test-backup 2>&1 | tail -5`
 Expected: Completes without error. New pattern may or may not match (depends on test data).
 
-**Step 3: Update Agent 6 prompt to handle the new pattern**
+**Step 3: Update Agent 8 prompt to handle the new pattern**
 
-In `prompts/phase-2-analysis.md`, in the Agent 6 section, add instruction 5 (renumber existing 5 to 6):
+In `prompts/phase-2-analysis.md`, in the Agent 8 section, add instruction 5 (renumber existing 5 to 6):
 
 ```markdown
 5. For matches labeled `whitespace-obfuscated payload`, note that the attacker used excessive blank lines (`\r\n` padding) to hide active content below the visible area of admin textareas (e.g., WPCode/Insert Headers and Footers). This is a strong indicator of malicious intent — rate at least HIGH.
@@ -87,7 +87,7 @@ git commit -m "feat: add @include detection instructions for Agent 3 (SCAN-04)"
 **Files:**
 - Modify: `prescan/scanners/database.py:17-33,62-70,115-147` (add multisite detection + subsite option extraction)
 - Modify: `prescan/constants.py:234-237` (no changes needed, `STANDARD_WP_TABLES` already exists)
-- Modify: `prompts/phase-2-analysis.md:131-142` (update Agent 7 instructions)
+- Modify: `prompts/phase-2-analysis.md:131-142` (update Agent 9 instructions)
 - Modify: `prompts/phase-4-report.md:71-87` (add Multisite subsection to Chunk 4)
 
 **Step 1: Add multisite detection to database scanner**
@@ -135,9 +135,9 @@ Add a regex and extraction block. After the `current_table` tracking at line 70:
                                     results['subsites'][site_id][opt_name] = val
 ```
 
-**Step 3: Update Agent 7 instructions for multisite awareness**
+**Step 3: Update Agent 9 instructions for multisite awareness**
 
-In `prompts/phase-2-analysis.md`, replace the Agent 7 instructions (lines 137-142) with:
+In `prompts/phase-2-analysis.md`, replace the Agent 9 instructions (lines 137-142) with:
 
 ```markdown
 Instructions for agent:
@@ -161,7 +161,7 @@ In `prompts/phase-4-report.md`, in the Chunk 4 section (line 87), add after Data
 
 ```markdown
 ### Multisite Analysis
-[If subsites were detected: condensed findings from agent 7 multisite audit. If no subsites: "Single-site installation — no multisite analysis needed."]
+[If subsites were detected: condensed findings from agent 9 multisite audit. If no subsites: "Single-site installation — no multisite analysis needed."]
 ```
 
 **Step 5: Commit**
@@ -180,9 +180,9 @@ git commit -m "feat: detect and audit multisite subsites in SQL dumps (SCAN-03)"
 - Modify: `prescan/constants.py` (add security log constants)
 - Modify: `prescan/discovery.py` (add `discover_security_log_dirs()`)
 - Modify: `prescan/scanner.py:115-120` (call new scanner, write section)
-- Modify: `prompts/phase-2-analysis.md:84-115` (add Agent 5c after Agent 5b)
+- Modify: `prompts/phase-2-analysis.md:84-115` (add Agent 7 after Agent 6)
 - Modify: `prompts/phase-4-report.md:71-87` (add Security Plugin Logs subsection)
-- Modify: `docs/project_notes/key_facts.md:57-67` (add Agent 5c to assignments)
+- Modify: `docs/project_notes/key_facts.md:57-67` (add Agent 7 to assignments)
 
 This is the largest task. It follows the same pattern as `error_logs.py` + `discover_log_files()`.
 
@@ -472,15 +472,15 @@ Update the `summary` dict (after line 168):
 Run: `python3 /Users/bhenderson/.claude/skills/wp-malware-scan/wp-malware-prescan.py /path/to/test-backup 2>&1 | tail -10`
 Expected: Shows "Scanning security plugin logs..." line. Completes without error. `prescan-data/security-logs.json` is created.
 
-### Step 6: Add Agent 5c prompt to phase-2-analysis.md
+### Step 6: Add Agent 7 prompt to phase-2-analysis.md
 
-In `prompts/phase-2-analysis.md`, add a new agent section after Agent 5b (after the `---` on line 117, before Agent 6):
+In `prompts/phase-2-analysis.md`, add a new agent section after Agent 6 (after the `---` on line 117, before Agent 8):
 
 ```markdown
-### Agent 5c: Security Plugin Log Analysis
+### Agent 7: Security Plugin Log Analysis
 
 **Input file**: `{backup_root}/prescan-data/security-logs.json`
-**Output file**: `{backup_root}/scan-results/agent-5c-security-logs.md`
+**Output file**: `{backup_root}/scan-results/agent-7-security-logs.md`
 
 Instructions for agent:
 1. Read the input JSON file. If `dirs_found` is 0, write a brief "No security plugin logs found" report and return
@@ -493,7 +493,7 @@ Instructions for agent:
 
 **Output format**:
 ```
-# Agent 5c: Security Plugin Log Analysis
+# Agent 7: Security Plugin Log Analysis
 
 ## Security Plugin Inventory
 
@@ -521,7 +521,7 @@ In `prompts/phase-4-report.md`, in Chunk 4 (line 80), add after Error Log Analys
 
 ```markdown
 ### Security Plugin Logs
-[Condensed key findings from agent 5c — attack evidence, attacker IPs, defense gaps. If no security logs: "No security plugin logs found."]
+[Condensed key findings from agent 7 — attack evidence, attacker IPs, defense gaps. If no security logs: "No security plugin logs found."]
 ```
 
 Also update the Summary table in Chunk 1 (add a row after Error Log Analysis):
@@ -532,10 +532,10 @@ Also update the Summary table in Chunk 1 (add a row after Error Log Analysis):
 
 ### Step 8: Update key_facts.md with new agent
 
-In `docs/project_notes/key_facts.md`, add after Agent 5b line:
+In `docs/project_notes/key_facts.md`, add after Agent 6 line:
 
 ```markdown
-- Agent 5c: Security Plugin Log Analysis
+- Agent 7: Security Plugin Log Analysis
 ```
 
 ### Step 9: Commit

@@ -35,9 +35,9 @@ Project configuration and important reference information for the wp-malware-sca
 
 ## Agent Dependencies
 
-- Agents 1-7 are **fully independent** — no agent depends on another's output
-- Phase 2 launches all 7 agents (filesystem, logs, DB) in parallel
-- Phase 3 (CVE checks, agents 8-9+) **depends on Phase 2** — it uses a compromise evidence summary compiled from agents 1-7
+- Agents 1-9 are **fully independent** — no agent depends on another's output
+- Phase 2 launches all 9 agents (filesystem, logs, DB) in parallel
+- Phase 3 (CVE checks, agents 10-11+) **depends on Phase 2** — it uses a compromise evidence summary compiled from agents 1-9
 - Phase 4 (report) **depends on all prior phases**
 
 ## Pre-Scanner Output Structure
@@ -60,10 +60,10 @@ Project configuration and important reference information for the wp-malware-sca
 - Agent 3: Core File Integrity
 - Agent 4: Theme & WP-Content Analysis
 - Agent 5: Timestamp & Timeline Analysis
-- Agent 5b: Error Log Analysis
-- Agent 5c: Security Plugin Log Analysis
-- Agent 6: Database Content Analysis
-- Agent 7: Database Structural Audit
-- Agent 8: WordPress Core CVE Check
-- Agents 9+: Plugin CVE Checks (batched 3-4 per agent)
+- Agent 6: Error Log Analysis
+- Agent 7: Security Plugin Log Analysis
+- Agent 8: Database Content Analysis
+- Agent 9: Database Structural Audit
+- Agent 10: WordPress Core CVE Check
+- Agents 11+: Plugin CVE Checks (batched 3-4 per agent)
 - Final agent: Report compilation

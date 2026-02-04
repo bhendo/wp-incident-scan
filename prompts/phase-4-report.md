@@ -69,7 +69,7 @@ Instructions for the report agent:
 [Condensed key findings from agent 3]
 ```
 
-**Chunk 4** (`cat >> {output_file} <<'SCANEOF'`): Detailed Findings — agents 4-7
+**Chunk 4** (`cat >> {output_file} <<'SCANEOF'`): Detailed Findings — agents 4-9
 ```
 ### Theme & WP-Content Malware
 [Condensed key findings from agent 4]
@@ -78,19 +78,19 @@ Instructions for the report agent:
 [Condensed key findings from agent 5]
 
 ### Error Log Analysis
-[Condensed key findings from agent 5b — auth manipulation, backdoor usage, code injection indicators]
+[Condensed key findings from agent 6 — auth manipulation, backdoor usage, code injection indicators]
 
 ### Security Plugin Logs
-[Condensed key findings from agent 5c — attack evidence, attacker IPs, defense gaps. If no security logs: "No security plugin logs found."]
+[Condensed key findings from agent 7 — attack evidence, attacker IPs, defense gaps. If no security logs: "No security plugin logs found."]
 
 ### Database Content
-[Condensed key findings from agent 6]
+[Condensed key findings from agent 8]
 
 ### Database Structure
-[Condensed key findings from agent 7]
+[Condensed key findings from agent 9]
 
 ### Multisite Analysis
-[If subsites were detected: condensed findings from agent 7 multisite audit. If no subsites: "Single-site installation — no multisite analysis needed."]
+[If subsites were detected: condensed findings from agent 9 multisite audit. If no subsites: "Single-site installation — no multisite analysis needed."]
 ```
 
 **Chunk 5** (`cat >> {output_file} <<'SCANEOF'`): Compromise Timeline + Recommendations

@@ -1,6 +1,6 @@
 ## Phase 2: Filesystem, Log & Database Analysis
 
-Launch the following sub-agents **all in parallel** using the Task tool (Agents 1-7).
+Launch the following sub-agents **all in parallel** using the Task tool (Agents 1-9).
 
 **CRITICAL — output budget**: Every sub-agent MUST follow the output budget rule from the preamble. Specifically:
 1. Use the Read tool to load its assigned `prescan-data/*.json` file
@@ -82,10 +82,10 @@ Instructions for agent:
 |------------|-------|----------------|--------------|
 ```
 
-### Agent 5b: Error Log Analysis
+### Agent 6: Error Log Analysis
 
 **Input file**: `{backup_root}/prescan-data/error-logs.json`
-**Output file**: `{backup_root}/scan-results/agent-5b-error-logs.md`
+**Output file**: `{backup_root}/scan-results/agent-6-error-logs.md`
 
 Instructions for agent:
 1. Read the input JSON file. If `log_files_found` is 0, write a brief "No error logs found" report and return
@@ -99,7 +99,7 @@ Instructions for agent:
 
 **Output format**:
 ```
-# Agent 5b: Error Log Analysis
+# Agent 6: Error Log Analysis
 
 ## Security Findings
 
@@ -117,10 +117,10 @@ Instructions for agent:
 
 ---
 
-### Agent 5c: Security Plugin Log Analysis
+### Agent 7: Security Plugin Log Analysis
 
 **Input file**: `{backup_root}/prescan-data/security-logs.json`
-**Output file**: `{backup_root}/scan-results/agent-5c-security-logs.md`
+**Output file**: `{backup_root}/scan-results/agent-7-security-logs.md`
 
 Instructions for agent:
 1. Read the input JSON file. If `dirs_found` is 0, write a brief "No security plugin logs found" report and return
@@ -133,7 +133,7 @@ Instructions for agent:
 
 **Output format**:
 ```
-# Agent 5c: Security Plugin Log Analysis
+# Agent 7: Security Plugin Log Analysis
 
 ## Security Plugin Inventory
 
@@ -156,10 +156,10 @@ Instructions for agent:
 
 ---
 
-### Agent 6: Database Content Analysis
+### Agent 8: Database Content Analysis
 
 **Input file**: `{backup_root}/prescan-data/database.json`
-**Output file**: `{backup_root}/scan-results/agent-6-db-content.md`
+**Output file**: `{backup_root}/scan-results/agent-8-db-content.md`
 
 Instructions for agent:
 1. Read the input JSON file. Focus on the `content_matches` and `snippets` arrays for each SQL dump
@@ -169,10 +169,10 @@ Instructions for agent:
 5. For matches labeled `whitespace-obfuscated payload`, note that the attacker used excessive blank lines (`\r\n` padding) to hide active content below the visible area of admin textareas (e.g., WPCode/Insert Headers and Footers). This is a strong indicator of malicious intent — rate at least HIGH.
 6. Write a severity-rated list of confirmed database injections with context to the output file
 
-### Agent 7: Database Structural Audit
+### Agent 9: Database Structural Audit
 
 **Input file**: `{backup_root}/prescan-data/database.json` (also read `{backup_root}/prescan-data/discovery.json` for plugin inventory)
-**Output file**: `{backup_root}/scan-results/agent-7-db-structure.md`
+**Output file**: `{backup_root}/scan-results/agent-9-db-structure.md`
 
 Instructions for agent:
 1. Read both input files. Focus on `users`, `admin_users`, `options`, `cron_data`, `create_tables`, and `subsites` from the database JSON
