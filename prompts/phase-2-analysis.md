@@ -136,9 +136,15 @@ Instructions for agent:
 **Output file**: `{backup_root}/scan-results/agent-7-db-structure.md`
 
 Instructions for agent:
-1. Read both input files. Focus on `users`, `admin_users`, `options`, `cron_data`, and `create_tables` from the database JSON
+1. Read both input files. Focus on `users`, `admin_users`, `options`, `cron_data`, `create_tables`, and `subsites` from the database JSON
 2. Review all admin accounts and flag suspicious ones (random usernames, suspicious email domains, recently created)
 3. Check siteurl/home for hijacking, active_plugins for unknown plugins, template/stylesheet for theme tampering
 4. Parse the cron data and flag unrecognized scheduled events
 5. Compare the CREATE TABLE list against standard WP tables plus known plugin tables, flag unknown tables
-6. Write findings grouped by category with severity ratings to the output file
+6. **Multisite audit**: If `subsites` is non-empty, this is a WordPress multisite installation. For each subsite:
+   - Flag admin_email addresses that don't match the main site's known users
+   - Check active_plugins for vulnerable or abandoned plugins (cross-reference with main site plugin inventory from discovery.json)
+   - Flag subsites where siteurl/home differ significantly from the main site (possible hijacking)
+   - Note subsites with different themes from the main site (may indicate abandonment)
+   - Abandoned subsites with outdated plugins are a common initial attack vector — rate as at least MEDIUM
+7. Write findings grouped by category with severity ratings to the output file

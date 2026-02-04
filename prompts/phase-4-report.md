@@ -84,6 +84,9 @@ Instructions for the report agent:
 
 ### Database Structure
 [Condensed key findings from agent 7]
+
+### Multisite Analysis
+[If subsites were detected: condensed findings from agent 7 multisite audit. If no subsites: "Single-site installation — no multisite analysis needed."]
 ```
 
 **Chunk 5** (`cat >> {output_file} <<'SCANEOF'`): Compromise Timeline + Recommendations

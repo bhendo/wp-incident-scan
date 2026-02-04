@@ -30,6 +30,7 @@ def scan_sql_dump(dump_path: str) -> dict:
         'create_tables': [],
         'cron_data': None,
         'snippets': [],
+        'subsites': {},
     }
 
     target_options = {
@@ -145,6 +146,26 @@ def scan_sql_dump(dump_path: str) -> dict:
                                     )
                                 else:
                                     results['options'][opt_name] = val
+
+                # SCAN-03: Detect multisite subsite options tables
+                subsite_m = re.match(r'wp_(\d+)_options', current_table)
+                if subsite_m and '_options' in current_table and 'INSERT' in line.upper():
+                    site_id = subsite_m.group(1)
+                    if site_id not in results['subsites']:
+                        results['subsites'][site_id] = {}
+                    subsite_target = {'siteurl', 'home', 'active_plugins', 'template', 'stylesheet', 'admin_email'}
+                    for opt_name in subsite_target:
+                        if opt_name in line:
+                            opt_match = re.search(
+                                rf"'{re.escape(opt_name)}'\s*,\s*'(.*?)'(?:\s*,\s*'(?:yes|no)')?",
+                                line, re.I
+                            )
+                            if opt_match:
+                                val = opt_match.group(1)
+                                if len(val) > 2000:
+                                    results['subsites'][site_id][opt_name] = val[:2000] + f'... [TRUNCATED]'
+                                else:
+                                    results['subsites'][site_id][opt_name] = val
 
                 # Code snippets table
                 if '_snippets' in current_table and 'INSERT' in line.upper():
