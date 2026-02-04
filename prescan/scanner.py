@@ -48,6 +48,15 @@ def main():
     if not wp_root:
         print('Error: Could not find WordPress root (no wp-includes/version.php)', file=sys.stderr)
         sys.exit(1)
+
+    # PATH-03: Verify resolved wp_root is within backup_path (symlink escape guard)
+    wp_root_resolved = str(wp_root.resolve())
+    backup_resolved = str(backup_path.resolve())
+    if not (wp_root_resolved == backup_resolved or wp_root_resolved.startswith(backup_resolved + os.sep)):
+        print(f'Error: WordPress root resolves outside backup directory. '
+              f'Possible symlink escape.', file=sys.stderr)
+        sys.exit(1)
+
     print(f'    WordPress root: {wp_root}', file=sys.stderr)
 
     wp_version = get_wp_version(wp_root)

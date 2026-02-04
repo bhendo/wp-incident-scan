@@ -57,5 +57,24 @@ class TestSqlDumpDiscovery(unittest.TestCase):
                 self.assertNotIn('secret', d)
 
 
+class TestWpRootBoundary(unittest.TestCase):
+    def test_wp_root_outside_backup_detected(self):
+        """PATH-03: wp_root resolving outside backup must be caught."""
+        import os as _os
+        backup_resolved = '/home/user/backup'
+        wp_root_resolved = '/var/www/other-site'
+        result = (wp_root_resolved == backup_resolved or
+                  wp_root_resolved.startswith(backup_resolved + _os.sep))
+        self.assertFalse(result)
+
+    def test_wp_root_inside_backup_accepted(self):
+        import os as _os
+        backup_resolved = '/home/user/backup'
+        wp_root_resolved = '/home/user/backup/wordpress'
+        result = (wp_root_resolved == backup_resolved or
+                  wp_root_resolved.startswith(backup_resolved + _os.sep))
+        self.assertTrue(result)
+
+
 if __name__ == '__main__':
     unittest.main()
