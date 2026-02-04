@@ -80,8 +80,15 @@ Instructions for agent:
 4. Core file modifications within 7 days after the version's release date should be flagged as "likely upgrade activity" rather than evidence of tampering
 5. Analyze modification clusters to identify potential compromise windows
 6. Look for bulk-modification patterns (many files with identical timestamps)
-7. Do NOT use WebSearch or WebFetch.
-8. Write a timeline of suspicious activity with date ranges and affected file groups to the output file
+7. Classify large modification clusters using directory and file type distribution data:
+   - **>40% of total files on one date, spread across all directories**: Likely a backup restoration or hosting migration — rate as INFO. If followed within days by a security plugin installation, note as a probable "restore after compromise" sequence
+   - **Cluster concentrated in wp-admin/ + wp-includes/**: Likely a WordPress core upgrade — cross-reference with the version release date
+   - **Cluster concentrated in wp-content/plugins/**: Likely a plugin installation or update batch — rate as MEDIUM if many plugins added in a short window (could indicate automated installation or attacker preparation)
+   - **Cluster in non-standard locations (webroot PHP files, single plugin directory, wp-content/uploads/)**: More likely targeted activity — rate as HIGH
+   - **Small cluster with PHP files in wp-content/uploads/**: Rate as HIGH — likely webshell deployment
+8. Do not label backup restores or migrations as CRITICAL. Reserve CRITICAL for clusters with confirmed malicious file indicators (backdoors, webshells, obfuscated code)
+9. Do NOT use WebSearch or WebFetch.
+10. Write a timeline of suspicious activity with date ranges and affected file groups to the output file
 
 **Output format** (timeline, not findings list — target under 6,000 chars):
 ```

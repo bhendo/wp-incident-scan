@@ -28,6 +28,12 @@ Track work completed on this skill.
 - **Description**: Email redaction in `redact_email()` removes actionable information from incident reports. Reviewing all redaction across the codebase (emails, wp-config values, password hashes, paths) to determine which redactions are appropriate for an incident response tool and which are counterproductive.
 - **Related**: BUG-05, SEC-04, INFO-01, INFO-02, INFO-03
 
+### 2026-02-04 - Agent 5 Mass File Event Classification (#62, #63)
+
+- **Status**: Completed
+- **Description**: Improved Agent 5's ability to distinguish backup restores from attacks. (1) Enriched prescan cluster data with `dir_distribution`, `ext_distribution`, and `pct_of_total` in `prescan/scanners/timestamps.py`. (2) Added classification rules to Agent 5 prompt in `prompts/phase-2-analysis.md` for interpreting large modification clusters. Tests added in `tests/test_timestamps.py`.
+- **Related**: #62, #63
+
 ### 2026-02-04 - Feature Gap Analysis
 
 - **Status**: Completed
