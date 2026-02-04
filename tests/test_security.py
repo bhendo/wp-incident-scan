@@ -76,5 +76,34 @@ class TestWpRootBoundary(unittest.TestCase):
         self.assertTrue(result)
 
 
+class TestResourceLimits(unittest.TestCase):
+    def test_max_file_read_size_constant(self):
+        """MEM-01: MAX_FILE_READ_SIZE should be 10MB."""
+        from prescan.constants import MAX_FILE_READ_SIZE
+        self.assertEqual(MAX_FILE_READ_SIZE, 10 * 1024 * 1024)
+
+    def test_large_file_skipped_in_core_files(self):
+        """MEM-01: Files exceeding MAX_FILE_READ_SIZE should be skipped."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            wp = Path(tmpdir)
+            # Create wp-includes/version.php so it looks like a WP root
+            (wp / 'wp-includes').mkdir()
+            (wp / 'wp-includes' / 'version.php').write_text("<?php $wp_version = '6.5'; ?>")
+            # Create an oversized wp-config.php
+            big_file = wp / 'wp-config.php'
+            big_file.write_text('x' * (11 * 1024 * 1024))  # 11MB
+
+            from prescan.scanners.core_files import read_core_files
+            result = read_core_files(wp)
+
+            self.assertIn('wp-config.php', result)
+            self.assertIn('SKIPPED', result['wp-config.php'])
+
+    def test_max_security_log_files_constant(self):
+        """LIMIT-02: MAX_SECURITY_LOG_FILES should exist."""
+        from prescan.constants import MAX_SECURITY_LOG_FILES
+        self.assertEqual(MAX_SECURITY_LOG_FILES, 100)
+
+
 if __name__ == '__main__':
     unittest.main()

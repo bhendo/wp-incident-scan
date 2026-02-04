@@ -11,6 +11,7 @@ from prescan.constants import (
     ERROR_LOG_GLOB_PATTERNS,
     ERROR_LOG_KNOWN_PATHS,
     MAX_LOG_FILES,
+    MAX_SECURITY_LOG_FILES,
     SECURITY_LOG_DIRS,
 )
 from prescan.utils import (
@@ -190,8 +191,12 @@ def discover_security_log_dirs(wp_root: Path) -> list[dict]:
 
         files = []
         total_size = 0
+        file_count = 0
         try:
             for f in sorted(candidate.rglob('*')):
+                file_count += 1
+                if file_count > MAX_SECURITY_LOG_FILES:
+                    break
                 if f.is_file() and is_within_root(f.resolve(), wp_root_resolved):
                     try:
                         size = f.stat().st_size
