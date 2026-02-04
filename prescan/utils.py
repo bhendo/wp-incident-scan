@@ -3,6 +3,7 @@ Shared helper functions used by multiple scanner modules.
 """
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -25,7 +26,8 @@ def is_legitimate_path(filepath: str) -> bool:
 
 def is_within_root(resolved_path: Path, root_resolved: str) -> bool:
     """Check that a resolved path stays within the WordPress root (symlink boundary guard)."""
-    return str(resolved_path).startswith(root_resolved)
+    s = str(resolved_path)
+    return s == root_resolved or s.startswith(root_resolved + os.sep)
 
 
 def truncate_content(content: str, max_size: int = MAX_FILE_CONTENT_SIZE) -> str:

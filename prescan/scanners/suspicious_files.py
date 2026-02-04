@@ -1,5 +1,6 @@
 """Scan for suspicious file locations, names, and attributes."""
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -101,7 +102,7 @@ def scan_suspicious_files(wp_root: Path) -> dict:
         if f.is_symlink():
             try:
                 target = str(f.resolve())
-                if not target.startswith(wp_root_str):
+                if not (target == wp_root_str or target.startswith(wp_root_str + os.sep)):
                     results['symlinks_outside_root'].append({'link': rel, 'target': target})
             except Exception:
                 pass
