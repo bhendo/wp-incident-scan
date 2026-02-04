@@ -11,6 +11,7 @@ from prescan.constants import (
     ERROR_LOG_GLOB_PATTERNS,
     ERROR_LOG_KNOWN_PATHS,
     MAX_LOG_FILES,
+    SECURITY_LOG_DIRS,
 )
 from prescan.utils import (
     is_within_root,
@@ -152,3 +153,62 @@ def discover_log_files(wp_root: Path) -> list[dict]:
     # Sort by size descending, cap at MAX_LOG_FILES
     results = sorted(found.values(), key=lambda x: x['size'], reverse=True)
     return results[:MAX_LOG_FILES]
+
+
+def discover_security_log_dirs(wp_root: Path) -> list[dict]:
+    """Discover Wordfence, Sucuri, and other security plugin log directories.
+
+    Returns list of dicts with path, rel_path, plugin_name, file_count, total_size.
+    """
+    wp_content = wp_root / 'wp-content'
+    if not wp_content.is_dir():
+        return []
+
+    found = []
+    wp_root_resolved = str(wp_root.resolve())
+
+    for rel_dir in SECURITY_LOG_DIRS:
+        candidate = wp_content / rel_dir
+        if not candidate.is_dir():
+            continue
+        resolved = candidate.resolve()
+        if not is_within_root(resolved, wp_root_resolved):
+            continue
+
+        # Identify which plugin this belongs to
+        plugin_name = rel_dir.split('/')[0]
+        if plugin_name == 'wflogs':
+            plugin_name = 'wordfence'
+        elif plugin_name == 'uploads':
+            plugin_name = rel_dir.split('/')[1] if '/' in rel_dir else 'unknown'
+
+        files = []
+        total_size = 0
+        try:
+            for f in sorted(candidate.rglob('*')):
+                if f.is_file() and is_within_root(f.resolve(), wp_root_resolved):
+                    try:
+                        size = f.stat().st_size
+                        files.append({
+                            'path': str(f),
+                            'rel_path': str(f.relative_to(wp_root)),
+                            'size': size,
+                            'name': f.name,
+                        })
+                        total_size += size
+                    except OSError:
+                        continue
+        except (PermissionError, OSError):
+            continue
+
+        if files:
+            found.append({
+                'dir_path': str(candidate),
+                'rel_path': str(candidate.relative_to(wp_root)),
+                'plugin_name': plugin_name,
+                'file_count': len(files),
+                'total_size': total_size,
+                'files': files,
+            })
+
+    return found

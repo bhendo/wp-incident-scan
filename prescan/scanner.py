@@ -18,6 +18,7 @@ from prescan.discovery import (
 from prescan.scanners.core_files import read_core_files
 from prescan.scanners.database import scan_sql_dump
 from prescan.scanners.error_logs import scan_error_logs
+from prescan.scanners.security_logs import scan_security_logs
 from prescan.scanners.php_patterns import scan_php_patterns
 from prescan.scanners.suspicious_files import scan_suspicious_files
 from prescan.scanners.themes import read_theme_functions
@@ -119,6 +120,13 @@ def main():
           f'{total_security} security-relevant entries', file=sys.stderr)
     write_section(data_dir, 'error-logs', error_logs)
 
+    print('[*] Scanning security plugin logs...', file=sys.stderr)
+    security_logs = scan_security_logs(wp_root)
+    sec_entries = sum(len(v) for v in security_logs['entries_by_category'].values())
+    print(f'    {security_logs["dirs_found"]} security log dirs found, '
+          f'{sec_entries} entries extracted', file=sys.stderr)
+    write_section(data_dir, 'security-logs', security_logs)
+
     # Database scans
     db_results = {}
     for i, dump in enumerate(sql_dumps):
@@ -135,6 +143,7 @@ def main():
         'theme_functions': 'prescan-data/theme-functions.json',
         'timestamps': 'prescan-data/timestamps.json',
         'error_logs': 'prescan-data/error-logs.json',
+        'security_logs': 'prescan-data/security-logs.json',
         'database': 'prescan-data/database.json',
     }
 
@@ -166,6 +175,8 @@ def main():
             'non_standard_root_php': len(suspicious_files['non_standard_root_php']),
             'error_log_files_found': error_logs['log_files_found'],
             'error_log_security_entries': total_security,
+            'security_log_dirs_found': security_logs['dirs_found'],
+            'security_log_entries': sec_entries,
         },
     }
 

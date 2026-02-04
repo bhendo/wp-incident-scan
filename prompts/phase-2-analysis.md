@@ -117,6 +117,45 @@ Instructions for agent:
 
 ---
 
+### Agent 5c: Security Plugin Log Analysis
+
+**Input file**: `{backup_root}/prescan-data/security-logs.json`
+**Output file**: `{backup_root}/scan-results/agent-5c-security-logs.md`
+
+Instructions for agent:
+1. Read the input JSON file. If `dirs_found` is 0, write a brief "No security plugin logs found" report and return
+2. Review `entries_by_category` for evidence of attacks that may have succeeded — especially `malware_detection` and `file_change` entries
+3. Check `ip_addresses` for IPs appearing across multiple attack categories — these are likely the attacker's IPs
+4. Cross-reference `login_attempt` entries with `blocked_attack` entries — a successful login followed by blocked attacks from the same IP suggests the attacker had credentials
+5. For `config_change` entries, flag any firewall disabling or security feature modifications — attackers often disable security plugins after gaining access
+6. Note which security plugins were active — their presence means the site had *some* defense, and the logs may reveal what the attacker did *despite* those defenses
+7. Write findings table + IP summary + brief analysis, target under 6,000 chars
+
+**Output format**:
+```
+# Agent 5c: Security Plugin Log Analysis
+
+## Security Plugin Inventory
+
+| Plugin | Log Directory | Files | Total Size |
+|--------|--------------|-------|------------|
+
+## Attack Evidence
+
+| # | Severity | Category | Plugin | Pattern | IP | Detail |
+|---|----------|----------|--------|---------|-----|--------|
+
+## Top Attacker IPs
+
+| IP Address | Hit Count | Categories |
+|------------|-----------|------------|
+
+## Notes
+[Brief analysis — attack patterns, timeline correlation, defense gaps]
+```
+
+---
+
 ### Agent 6: Database Content Analysis
 
 **Input file**: `{backup_root}/prescan-data/database.json`

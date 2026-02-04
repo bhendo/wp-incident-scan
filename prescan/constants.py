@@ -224,6 +224,54 @@ LOG_SECURITY_PATTERNS = {
 }
 
 # ---------------------------------------------------------------------------
+# Security plugin log patterns (SCAN-02)
+# ---------------------------------------------------------------------------
+
+MAX_SECURITY_LOG_FILES = 100
+MAX_SECURITY_LOG_READ_BYTES = 5 * 1024 * 1024  # 5MB per file
+MAX_SECURITY_LOG_TOTAL_BYTES = 30 * 1024 * 1024  # 30MB total
+MAX_SECURITY_LOG_ENTRIES = 500  # Max entries to include in output
+
+# Known security plugin log directories (relative to wp-content/)
+SECURITY_LOG_DIRS = [
+    'wflogs',                           # Wordfence
+    'plugins/wordfence/tmp',            # Wordfence tmp
+    'uploads/sucuri',                   # Sucuri
+    'plugins/sucuri-scanner/logs',      # Sucuri scanner
+    'uploads/shield',                   # Shield Security
+    'plugins/better-wp-security/logs',  # iThemes/SolidWP Security
+    'uploads/mainwp',                   # MainWP
+    'plugins/all-in-one-wp-security-and-firewall/logs',  # AIOS
+]
+
+# Patterns to extract from security plugin logs
+SECURITY_LOG_PATTERNS = {
+    'blocked_attack': [
+        (r'blocked.*(?:sql|xss|rfi|lfi|rce|traversal)', 'blocked_attack'),
+        (r'firewall.*block', 'firewall_block'),
+        (r'waf.*block', 'waf_block'),
+    ],
+    'login_attempt': [
+        (r'login.*(?:fail|invalid|locked|blocked)', 'failed_login'),
+        (r'brute.?force', 'brute_force'),
+        (r'lockout', 'lockout'),
+    ],
+    'file_change': [
+        (r'file.*(?:modif|chang|added|deleted)', 'file_change'),
+        (r'integrity.*(?:fail|changed)', 'integrity_check'),
+    ],
+    'malware_detection': [
+        (r'malware.*(?:found|detected|scan)', 'malware_found'),
+        (r'suspicious.*(?:file|code)', 'suspicious_detected'),
+        (r'quarantin', 'quarantine'),
+    ],
+    'config_change': [
+        (r'(?:option|setting|config).*(?:changed|updated|modified)', 'config_change'),
+        (r'firewall.*(?:enabled|disabled|mode)', 'firewall_config'),
+    ],
+}
+
+# ---------------------------------------------------------------------------
 # WordPress reference data
 # ---------------------------------------------------------------------------
 

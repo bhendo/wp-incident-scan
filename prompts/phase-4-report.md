@@ -32,6 +32,7 @@ Instructions for the report agent:
 | Theme & WP-Content Malware | ... | ... | ... |
 | File Timestamps | ... | ... | ... |
 | Error Log Analysis | ... | ... | ... |
+| Security Plugin Logs | ... | ... | ... |
 | Database Content | ... | ... | ... |
 | Database Structure | ... | ... | ... |
 
@@ -78,6 +79,9 @@ Instructions for the report agent:
 
 ### Error Log Analysis
 [Condensed key findings from agent 5b — auth manipulation, backdoor usage, code injection indicators]
+
+### Security Plugin Logs
+[Condensed key findings from agent 5c — attack evidence, attacker IPs, defense gaps. If no security logs: "No security plugin logs found."]
 
 ### Database Content
 [Condensed key findings from agent 6]
