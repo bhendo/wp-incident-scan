@@ -101,8 +101,8 @@ def scan_sql_dump(dump_path: str) -> dict:
                     for um in user_matches:
                         results['users'].append({
                             'id': um[0], 'login': um[1],
-                            'email': redact_email(um[3]),
-                            'nicename': um[2],
+                            'email': redact_email(um[4]),
+                            'nicename': um[3],
                         })
 
                 # Admin role detection

@@ -16,6 +16,16 @@ Track bugs encountered and their solutions for future reference.
 - **Workaround used**: Plugin CVE agents were retried with stricter instructions to write terse output. Report Compiler was bypassed entirely — the orchestrator wrote the report manually using the Write tool directly (which has the same limit but the report was kept short enough).
 - **Fixed**: PERF-01 added a global 7,500-char output budget rule, structured table formats, and `cat >>` chunked-write instructions for all sub-agents. PERF-02 restructured the Report Compiler to write in 5 sequential chunks instead of a single Write call. Both completed 2026-02-03.
 
+### BUG-03: User email extraction uses wrong capture group index [MEDIUM]
+
+- **Date**: 2026-02-04
+- **Status**: Fixed (2026-02-04)
+- **Component**: `prescan/scanners/database.py` — user extraction regex (lines 97-106)
+- **Symptoms**: Extracted "email" field for users contained the nicename (e.g., `admin`) instead of the actual email address (e.g., `admin@example.com`). Because nicenames don't contain `@`, `redact_email()` returned them unchanged, making it appear as though the `@` symbol had been stripped.
+- **Root cause**: Off-by-one error in capture group indexing. The regex captures 5 groups from WordPress `wp_users` INSERT statements matching column order `(ID, user_login, user_pass, user_nicename, user_email)`. The code used `um[3]` (user_nicename) for email and `um[2]` (user_pass) for nicename, instead of `um[4]` and `um[3]` respectively. This also leaked partial password hashes into the `nicename` field.
+- **Fix**: Changed `email: redact_email(um[3])` → `redact_email(um[4])` and `nicename: um[2]` → `um[3]`. Added regression tests in `tests/test_database.py`.
+- **Prevention**: Test coverage for user extraction with realistic INSERT data.
+
 ### BUG-02: Agent 5 halluccinates WP version installation date [HIGH]
 
 - **Date**: 2026-02-04

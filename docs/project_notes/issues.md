@@ -16,6 +16,12 @@ Track work completed on this skill.
 - **Status**: Completed
 - **Description**: Renumbered agents sequentially, removing 5b/5c suffixes: 5b→6, 5c→7, 6→8, 7→9, 8→10, 9+→11+. Updated 6 files: phase-2-analysis.md, phase-3-vulns.md, phase-4-report.md, key_facts.md, issues.md, scan-db-enhancements plan.
 
+### 2026-02-04 - BUG-03 Fix: User Email Extraction Off-by-One
+
+- **Status**: Completed
+- **Description**: Fixed capture group indexing bug in `prescan/scanners/database.py` where user email extraction used `um[3]` (nicename) instead of `um[4]` (email). Added test infrastructure (`tests/`) and regression tests for database scanner user extraction and `redact_email()` utility.
+- **Related**: BUG-03
+
 ### 2026-02-04 - Feature Gap Analysis
 
 - **Status**: Completed
