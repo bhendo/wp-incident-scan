@@ -46,8 +46,9 @@ Instructions for agent:
 2. Review each core file for injected code, suspicious includes/requires, malicious redirects, or unauthorized modifications
 3. Compare against expected WordPress core file structure
 4. Check .htaccess files for malicious rewrite rules, redirects, or PHP execution directives in uploads
-5. If any file was truncated, use the Read tool to read the full file from disk for complete analysis
-6. Write per-file verdict (CLEAN / SUSPICIOUS) with quoted suspicious lines to the output file
+5. **wp-config.php @include audit**: Flag ANY `@include`, `include`, `require`, or `require_once` directive in wp-config.php. The ONLY expected include is `wp-settings.php` (at the bottom). All others are suspicious — especially `@include` of files in wp-content/, wp-includes/, or with non-PHP extensions (.ico, .jpg, .png). Common legitimate exception: `bv-preload.php` (MalCare/BlogVault error monitoring) — flag as INFO, not HIGH. Common malware: WP-VCD uses `@include` to load backdoors from wp-content or theme directories.
+6. If any file was truncated, use the Read tool to read the full file from disk for complete analysis
+7. Write per-file verdict (CLEAN / SUSPICIOUS) with quoted suspicious lines to the output file
 
 ### Agent 4: Theme & WP-Content Analysis
 
