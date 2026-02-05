@@ -13,8 +13,8 @@ Project configuration and important reference information for the wp-incident-sc
 ## Allowed Tools
 
 - `Bash(python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py *)` (prescan script only)
-- `Bash(mkdir -p */scan-results)` (output directory only)
-- `Bash(cat >> */scan-results/*)` (chunked appends to output only)
+- `Bash(mkdir -p *-scan-output/scan-results)` (output directory only)
+- `Bash(cat >> *-scan-output/scan-results/*)` (chunked appends to output only)
 - `Read`, `Write`, `Edit`, `Glob`, `Grep`
 - `Task` (sub-agents use `subagent_type: "general-purpose"`)
 - `WebSearch` (Phase 1: WP version release date lookup)
@@ -45,7 +45,9 @@ Project configuration and important reference information for the wp-incident-sc
 
 ## Pre-Scanner Output Structure
 
-- `wp-prescan-results.json` - Lightweight index (in backup root)
+Output is written to a sibling directory: `{backup_name}-scan-output/` (SEC-03, ADR-005). Override with `--output-dir`. The prescan includes `_meta.output_dir` in the JSON index for orchestrator consumption. Prompts use `{output_root}` (write) separate from `{backup_root}` (read).
+
+- `wp-prescan-results.json` - Lightweight index (in output root)
 - `prescan-data/discovery.json` - WP version, plugins, themes, SQL dumps
 - `prescan-data/php-pattern-matches.json` - PHP pattern scan results
 - `prescan-data/suspicious-files.json` - Suspicious file locations
