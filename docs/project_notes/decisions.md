@@ -60,3 +60,31 @@ Record of architectural and design decisions for the wp-incident-scan skill.
 - Release date is always current (WebSearch hits wordpress.org)
 - Pre-scanner remains a pure offline tool
 - If WebSearch fails, Agent 5 gets "unknown" and skips version-date comparisons (safe fallback)
+
+### ADR-004: Wordfence Database for Prescan CVE Lookups (2026-02-04)
+
+**Context:**
+- BUG-04: Plugin CVE agents hallucinated CVE IDs at alarming rates (81-100% incorrect) when relying on LLM training knowledge
+- CVE agents fabricated plausible-looking IDs, misattributed real CVEs from unrelated software, and invented CVSS scores
+- The hallucinated data cascaded into the final report's attack chain analysis, undermining report credibility
+- Need a grounded, verifiable CVE data source that doesn't depend on LLM memory
+
+**Decision:**
+- Added `prescan/scanners/cve_lookup.py` that fetches and locally caches the Wordfence vulnerability database (full production feed)
+- Cache stored at `cache/wordfence-vulns.json` with 24h TTL — refreshed automatically when stale
+- Pre-scanner matches detected plugins/themes/core version against the database and outputs `prescan-data/plugin-cves.json`
+- Phase 3 agents read CVE data from this file only — WebSearch is prohibited for CVE lookups
+- Agents are explicitly instructed: "Do NOT fabricate or guess CVE IDs — use only the data provided from the prescan"
+
+**Alternatives Considered:**
+- Runtime WebSearch per plugin -> Rejected: unreliable results, slow (one search per plugin), still requires LLM to parse search results correctly, expands attack surface per TOOL-03
+- WPScan API -> Rejected: requires API key for full access, rate-limited free tier
+- NVD API -> Rejected: WordPress-specific CVE coverage is inconsistent, slow API, requires keyword mapping from plugin slugs to CPE names
+- Patchstack API -> Rejected: requires API key
+- Wordfence was chosen because: free unauthenticated API, comprehensive WordPress-specific coverage, single bulk download (no per-plugin queries), includes CVSS scores and affected version ranges
+
+**Consequences:**
+- CVE data is verifiable and grounded — eliminates the hallucination vector entirely
+- Pre-scanner gains its first network dependency (Wordfence API), but degrades gracefully (reports "unavailable" if fetch fails, agents skip CVE reporting)
+- 24h cache means the database is fetched at most once per day, not per scan
+- Cache file can be large (~30MB) but is stored outside the backup directory

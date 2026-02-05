@@ -12,10 +12,13 @@ Project configuration and important reference information for the wp-incident-sc
 
 ## Allowed Tools
 
-- `Bash(python3 *)`, `Bash(mkdir *)`, `Bash(cat *)`
+- `Bash(python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py *)` (prescan script only)
+- `Bash(mkdir -p */scan-results)` (output directory only)
+- `Bash(cat >> */scan-results/*)` (chunked appends to output only)
 - `Read`, `Write`, `Edit`, `Glob`, `Grep`
 - `Task` (sub-agents use `subagent_type: "general-purpose"`)
-- `WebSearch`, `WebFetch` (for CVE lookups in Phase 4)
+- `WebSearch` (Phase 1: WP version release date lookup)
+- `WebFetch` (Phase 3: restricted to `wordpress.org` only for plugin/theme metadata)
 
 ## Environment Constraints
 
@@ -37,7 +40,7 @@ Project configuration and important reference information for the wp-incident-sc
 
 - Agents 1-9 are **fully independent** — no agent depends on another's output
 - Phase 2 launches all 9 agents (filesystem, logs, DB) in parallel
-- Phase 3 (CVE checks, agents 10-11+) **depends on Phase 2** — it uses a compromise evidence summary compiled from agents 1-9
+- Phase 3 (CVE checks, agents 10-11+) **depends on Phase 2** — it uses a compromise evidence summary compiled from agents 1-9. CVE data comes from prescan `plugin-cves.json` (Wordfence cache), not WebSearch.
 - Phase 4 (report) **depends on all prior phases**
 
 ## Pre-Scanner Output Structure
@@ -52,6 +55,7 @@ Project configuration and important reference information for the wp-incident-sc
 - `prescan-data/error-logs.json` - PHP error log security analysis
 - `prescan-data/security-logs.json` - Security plugin log analysis
 - `prescan-data/database.json` - SQL dump analysis
+- `prescan-data/plugin-cves.json` - CVE data from Wordfence database cache (24h TTL)
 
 ## Agent Assignments
 

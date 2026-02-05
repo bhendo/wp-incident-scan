@@ -7,7 +7,7 @@ Track bugs encountered and their solutions for future reference.
 ### BUG-01: Sub-agents exceed 4096 output token limit and fail silently [HIGH]
 
 - **Date**: 2026-02-03
-- **Status**: Open
+- **Status**: Fixed (2026-02-03)
 - **Component**: `prompt.md` — all sub-agents, especially Plugin CVE batch agents and Report Compiler
 - **Environment**: Bedrock API with `CLAUDE_CODE_MAX_OUTPUT_TOKENS=4096`, `MAX_THINKING_TOKENS=1024`
 - **Symptoms**: Agents 15 (Plugin CVE Batch 7), 16 (Plugin CVE Batch 8), and the Final Report Compiler all failed with API errors. The model response exceeded 4096 tokens, truncating mid-JSON and preventing tool calls from executing. Agents that attempted Write tool calls with large report content never completed the write — all work was lost.
@@ -39,7 +39,7 @@ Track bugs encountered and their solutions for future reference.
 ### BUG-04: Plugin CVE agents hallucinate CVE IDs, misattribute to wrong products [CRITICAL]
 
 - **Date**: 2026-02-04
-- **Status**: Open
+- **Status**: Fixed (2026-02-04)
 - **Component**: Phase 3 Plugin CVE batch agents (`prompts/phase-3-vulns.md`)
 - **Symptoms**: Reports contain CVE IDs that are either fabricated or belong to completely unrelated software. In Report 3, only 3 of 16 CVEs (19%) were correctly attributed. In Report 4, 0 of 15 CVEs were fully correct (1 partially correct). Examples of misattribution: CVE-2024-26641 (Linux kernel IPv6 tunneling bug) attributed to Slider Revolution; CVE-2023-6932 (Linux kernel IGMP use-after-free) attributed to WP Mail SMTP; CVE-2022-0772 (Libsndfile buffer overflow) attributed to User Role Editor. Report 4 additionally fabricated 6 "WordPress Core" CVEs (CVE-2024-27956 through 27962) that are actually Patchstack-assigned plugin CVEs for unrelated plugins.
 - **Root cause**: CVE batch agents rely entirely on LLM training knowledge to look up CVEs for each plugin. The model "knows" a plugin has had vulnerabilities but fabricates plausible-looking CVE IDs or grabs real CVE IDs from unrelated products. No external verification against NVD, WPScan, or Patchstack APIs occurs. CVSS scores are also fabricated, with hallucinated CVEs almost always assigned 8.0-9.9 to maximize apparent severity.
@@ -52,6 +52,7 @@ Track bugs encountered and their solutions for future reference.
   - Sequential CVE blocks attributed to one product (e.g., CVE-2024-27956-27962 all claimed as WP Core)
 - **Correctly identified CVEs across both reports**: CVE-2023-6933 (Better Search Replace), CVE-2023-48777 (Elementor), CVE-2020-25213 (wp-file-manager) — all well-known, widely-reported vulnerabilities
 - **Fix needed**: CVE agents must be grounded against live external data rather than LLM memory. Options: (1) WebSearch or WebFetch against NVD API (`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-XXXX`), WPScan API, or Patchstack API during Phase 3 to verify each CVE before including it. (2) Alternatively, use WebSearch to find real CVEs for each plugin+version combination rather than asking the model to recall them. (3) Add a post-processing validation step that cross-checks all CVE IDs against NVD before the report is finalized.
+- **Fix**: Added prescan CVE lookup module (`prescan/scanners/cve_lookup.py`) that fetches and caches the Wordfence vulnerability database locally (24h TTL). The prescan now outputs `prescan-data/plugin-cves.json` with real CVE data for all detected plugins, themes, and WP core. Phase 3 agents read CVE data from this file instead of relying on LLM knowledge. Prompts explicitly state "Do NOT fabricate or guess CVE IDs — use only the data provided from the prescan" and prohibit WebSearch for CVE lookups.
 - **Related**: BUG-02 (same class — LLM training knowledge used where external data is needed)
 
 ### BUG-05: Email redaction removes actionable information from incident reports [MEDIUM]
