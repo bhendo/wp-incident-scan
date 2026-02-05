@@ -11,4 +11,7 @@ incident-scan-report.md
 # Scan output for comparison
 __compare__
 
+# Wordfence vulnerability cache (generated at runtime)
+cache/
+
 .worktrees

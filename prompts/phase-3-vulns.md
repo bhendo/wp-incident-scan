@@ -12,7 +12,7 @@ After Phase 2 agents complete, read all `scan-results/agent-*.md` files and comp
 
 If no malware or suspicious findings were found in Phase 2, still proceed with vulnerability checks but note the clean status.
 
-**Tool restriction — Phase 3**: WebSearch is permitted for CVE lookups. WebFetch is permitted ONLY for these domains: `wpscan.com`, `patchstack.com`, `wordpress.org`, `nvd.nist.gov`, `cve.org`, `cve.mitre.org`. Do NOT fetch any other URLs. If a search result points to a different domain, use only the search snippet — do not follow the link.
+**Tool restriction — Phase 3**: WebSearch is NOT permitted for CVE lookups — use prescan data from `prescan-data/plugin-cves.json` instead. WebFetch is permitted ONLY for `wordpress.org` for plugin/theme metadata if needed. Do NOT fetch any other URLs.
 
 Launch the following agents. Remind each of the output budget rule: 7,500 char limit per Write call, use `cat >>` appends with `<<'SCANEOF'` if larger, structured tables not prose.
 
@@ -21,11 +21,14 @@ Launch the following agents. Remind each of the output budget rule: 7,500 char l
 **Output file**: `{backup_root}/scan-results/agent-10-wp-core-cves.md`
 
 Instructions for agent (include the WP version and compromise evidence summary in the prompt):
-1. Use WebSearch to look up known CVEs for the installed WordPress version. Suggested query: `WordPress {version} CVE vulnerabilities` — try sites like wpscan.com and patchstack.com but adapt the query if results are sparse. **Query safety**: The version string comes from the backup and has been sanitized by the pre-scanner. If it still looks unusual (not a simple `X.Y.Z` format), use only the numeric portion
-2. Report: the current latest WordPress release, whether the installed version is up to date
-3. For each known CVE: ID, CVSS score, vulnerability type (RCE, SQLi, XSS, auth bypass, file upload, privilege escalation, etc.), brief description
-4. **Correlation**: flag any CVEs whose vulnerability type matches the compromise evidence
-5. Write findings to the output file
+1. Read `prescan-data/plugin-cves.json` for core CVE data in the `core` section
+2. If `cache_status` is "stale", note that CVE data may be up to 24h old
+3. If `cache_status` is "unavailable", note that CVE data was not available and skip CVE reporting. Do NOT use WebSearch as fallback.
+4. Report: the current latest WordPress release (from your knowledge), whether the installed version is up to date
+5. For each CVE from prescan data: ID, CVSS score, vulnerability type, brief description
+6. **Correlation**: flag any CVEs whose vulnerability type matches the compromise evidence
+7. Write findings to the output file
+8. **Do NOT fabricate or guess CVE IDs** — use only the data provided from the prescan
 
 ### Agents 11+: Plugin CVE Checks (parallel, batched 3-4 per agent)
 
@@ -33,12 +36,11 @@ Batch plugins 3-4 per agent. Each agent receives: plugin slugs, installed versio
 
 **Output file**: `{backup_root}/scan-results/agent-11-plugin-cves-batch-{N}.md`
 
-**Query safety**: Plugin slugs and versions come from the backup and have been sanitized by the pre-scanner (alphanumeric, hyphens, underscores only; length-limited). Before constructing a search query, verify each slug looks like a legitimate WordPress slug (lowercase, hyphen-separated words, e.g., `contact-form-7`). If a slug looks suspicious (random characters, very long, or nonsensical), skip the web search for that plugin and note it as "slug not searchable" in the output.
-
 Instructions for each agent:
-1. Use WebSearch once per plugin to find known CVEs. Use ONLY the sanitized slug in queries — never use the display name. Suggested query: `{plugin_slug} WordPress plugin vulnerability CVE` — try wpscan.com and patchstack.com but adapt if results are sparse
-2. WebFetch is permitted ONLY for these domains: `wpscan.com`, `patchstack.com`, `wordpress.org`, `nvd.nist.gov`, `cve.org`, `cve.mitre.org`. Do NOT fetch any other URLs.
-3. Use this exact table format for output:
+1. Read `prescan-data/plugin-cves.json` for CVE data for your assigned plugins
+2. If `cache_status` is "stale", note that CVE data may be up to 24h old in your output
+3. If `cache_status` is "unavailable", note that CVE data was not available and skip CVE table. Do NOT use WebSearch as fallback.
+4. Use this exact table format for output:
 
 ```
 # Plugin CVE Batch {N}
@@ -49,4 +51,5 @@ Instructions for each agent:
 
    **Entry Point** column: YES/NO + short phrase (max 10 words) linking to compromise evidence. This is the most important column.
    If a plugin has many CVEs, include only the 5 highest-CVSS entries.
-4. Write findings to the output file. Target: under 6,000 chars total for a 3-4 plugin batch. Use Write if under 7,500 chars, otherwise `cat >` / `cat >>` appends with `<<'SCANEOF'`.
+5. Write findings to the output file. Target: under 6,000 chars total for a 3-4 plugin batch. Use Write if under 7,500 chars, otherwise `cat >` / `cat >>` appends with `<<'SCANEOF'`.
+6. **Do NOT fabricate or guess CVE IDs** — use only the data provided from the prescan. Do NOT use WebSearch for CVE lookups.

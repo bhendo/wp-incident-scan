@@ -24,6 +24,7 @@ from prescan.scanners.suspicious_files import scan_suspicious_files
 from prescan.scanners.themes import read_theme_functions
 from prescan.scanners.timestamps import analyze_timestamps
 from prescan.utils import write_section
+from prescan.scanners.cve_lookup import lookup_plugin_cves, find_cves_for_core, load_or_refresh_cache
 
 
 def main():
@@ -124,6 +125,25 @@ def main():
     }
     write_section(data_dir, 'discovery', discovery)
 
+    # CVE lookup
+    print('[*] Looking up plugin CVEs...', file=sys.stderr)
+    cve_result = lookup_plugin_cves(plugins)
+    # Add core CVEs if cache was loaded
+    if cve_result['cache_status'] != 'unavailable':
+        vuln_db, _ = load_or_refresh_cache()
+        if vuln_db:
+            core_cves = find_cves_for_core(wp_version, vuln_db)
+            cve_result['core'] = {
+                'wp_version': wp_version,
+                'cves': core_cves,
+            }
+            if core_cves:
+                cve_result['total_cves_matched'] += len(core_cves)
+    print(f'    {cve_result["plugins_checked"]} plugins checked, '
+          f'{cve_result["plugins_with_cves"]} with known CVEs '
+          f'({cve_result["total_cves_matched"]} total)', file=sys.stderr)
+    write_section(data_dir, 'plugin-cves', cve_result)
+
     # Filesystem scans
     print('[*] Scanning PHP patterns...', file=sys.stderr)
     php_patterns = scan_php_patterns(wp_root)
@@ -181,6 +201,7 @@ def main():
         'error_logs': 'prescan-data/error-logs.json',
         'security_logs': 'prescan-data/security-logs.json',
         'database': 'prescan-data/database.json',
+        'plugin_cves': 'prescan-data/plugin-cves.json',
     }
 
     index = {
@@ -213,6 +234,9 @@ def main():
             'error_log_security_entries': total_security,
             'security_log_dirs_found': security_logs['dirs_found'],
             'security_log_entries': sec_entries,
+            'plugins_with_known_cves': cve_result['plugins_with_cves'],
+            'total_cves_matched': cve_result['total_cves_matched'],
+            'cve_cache_status': cve_result['cache_status'],
         },
     }
 
