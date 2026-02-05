@@ -33,6 +33,12 @@ This project maintains institutional knowledge in `docs/project_notes/` for cons
 - Log completed work in `docs/project_notes/issues.md`
 - Include date, brief description, and status
 
+**When resolving an issue:**
+- Move the issue's detail section from `issues.md` to `issues-archive.md`
+- Add the issue ID to the appropriate "Resolved" line in the work log entry
+- Remove from the "Remaining Pending Issues" list and renumber
+- Close the GitHub issue (`gh issue close #N`) with a comment referencing the fixing commit(s)
+
 **When user requests memory updates:**
 - Update the appropriate memory file (bugs, decisions, key_facts, or issues)
 - Follow the established format and style (bullet lists, dates, concise entries)
