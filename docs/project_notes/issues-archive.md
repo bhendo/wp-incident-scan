@@ -312,3 +312,11 @@ Completed/closed issue details, moved from `issues.md` on 2026-02-05 to reduce c
 - **Component**: `prescan/discovery.py:188`
 - **Description**: `discover_security_log_dirs()` uses `rglob('*')` with no file count limit. `MAX_SECURITY_LOG_FILES` (100) is defined in constants but not applied during discovery enumeration. A backup with a `wflogs/` dir containing millions of files → unbounded memory.
 - **Fix**: Apply `MAX_SECURITY_LOG_FILES` as a cap in the `rglob('*')` loop.
+
+### SEC-03 (#3): Backup Directory Contamination [MEDIUM]
+
+- **Status**: Resolved (2026-02-05)
+- **Severity**: Medium
+- **Component**: `prescan/scanner.py`, `SKILL.md`, `prompts/`
+- **Description**: The scanner wrote output directly into the scanned backup directory (`prescan-data/`, `scan-results/`, `wp-prescan-results.json`, `incident-scan-report.md`). This modified timestamps and directory structure of forensic evidence. If the user accidentally pointed the tool at a live WordPress installation, these files would be web-accessible.
+- **Fix**: Output now writes to a sibling directory (`{backup}-scan-output/`) outside the backup. Added `--output-dir` flag for override. Prompts use `{output_root}` for write paths, separate from `{backup_root}` for read paths. ADR-005 supersedes ADR-002.

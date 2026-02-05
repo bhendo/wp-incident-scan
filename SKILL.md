@@ -1,7 +1,7 @@
 ---
 name: wp-incident-scan
 description: Scan a WordPress backup for malware, backdoors, and known vulnerabilities
-allowed-tools: Bash(python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py *), Bash(mkdir -p */scan-results), Bash(cat >> */scan-results/*), Read, Write, Edit, Glob, Grep, Task, WebSearch, WebFetch
+allowed-tools: Bash(python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py *), Bash(mkdir -p *-scan-output/scan-results), Bash(cat >> *-scan-output/scan-results/*), Read, Write, Edit, Glob, Grep, Task, WebSearch, WebFetch
 argument-hint: /path/to/wordpress/backup
 disable-model-invocation: true
 ---
@@ -17,6 +17,8 @@ If no path was provided, ask the user for the path to the WordPress backup direc
 ```bash
 python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py "$ARGUMENTS"
 ```
+
+The prescan prints the path to `wp-prescan-results.json` on stdout. Read that file and extract `_meta.output_dir` — this is where all scan output will be written. Use this as `{output_root}` when reading prompts. The backup path (`$ARGUMENTS`) remains `{backup_root}`.
 
 ## Step 2: Follow the modular scan prompts
 

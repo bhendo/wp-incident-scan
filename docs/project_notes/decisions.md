@@ -88,3 +88,23 @@ Record of architectural and design decisions for the wp-incident-scan skill.
 - Pre-scanner gains its first network dependency (Wordfence API), but degrades gracefully (reports "unavailable" if fetch fails, agents skip CVE reporting)
 - 24h cache means the database is fetched at most once per day, not per scan
 - Cache file can be large (~30MB) but is stored outside the backup directory
+
+### ADR-005: Output Directory Isolation (2026-02-05)
+
+**Context:**
+- ADR-002 acknowledged that writing output into the backup directory was a known risk
+- SEC-03: forensic evidence contamination and live-site exposure
+
+**Decision:**
+- Write all output to a sibling directory: `{backup_name}-scan-output/`
+- Add `--output-dir` flag to prescan for override
+- Prescan includes `output_dir` in JSON index for orchestrator
+- Prompts use `{output_root}` (write) separate from `{backup_root}` (read)
+
+**Supersedes:** ADR-002
+
+**Consequences:**
+- Backup directory is never modified by the scanner
+- Forensic evidence timestamps preserved
+- No web-accessible files if pointed at a live site
+- Parent directory of backup must be writable (clear error if not)
