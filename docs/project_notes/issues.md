@@ -9,7 +9,7 @@ Track work completed on this skill. Completed issue details archived in `issues-
 - **Status**: Completed
 - **Description**: Comprehensive security review of all skill files (SKILL.md, prompts/, prescan/)
 - **Findings**: 2 High, 4 Medium, 3 Low severity issues identified
-- **Resolved**: SEC-01 (#1), SEC-02 (#2), SEC-04 (#4), SEC-05 (#5), SEC-06 (#6), SEC-07 (#7), SEC-08 (#8), SEC-09 (#9), DB-01 (#10), DB-02 (#11), DB-03 (#12)
+- **Resolved**: SEC-01 (#1), SEC-02 (#2), SEC-03 (#3), SEC-04 (#4), SEC-05 (#5), SEC-06 (#6), SEC-07 (#7), SEC-08 (#8), SEC-09 (#9), DB-01 (#10), DB-02 (#11), DB-03 (#12)
 
 ### 2026-02-03 - Performance Fixes
 
@@ -68,39 +68,36 @@ Track work completed on this skill. Completed issue details archived in `issues-
 - **Status**: Completed
 - **Description**: Moved completed issue details to `issues-archive.md` to reduce context overhead.
 
+### 2026-02-05 - SEC-03 Output Directory Isolation (#3)
+
+- **Status**: Completed
+- **Description**: Isolated scan output from backup directory. Added argparse with --output-dir flag, sibling directory default, {output_root} prompt convention. ADR-005 supersedes ADR-002.
+- **Resolved**: SEC-03 (#3)
+
 ---
 
 ## Remaining Pending Issues
 
-1. **SEC-03** (#3) — Backup directory contamination (write output outside backup)
-2. **GAP-01** (#40) — No JavaScript malware detection (skimmers, redirects, cryptominers) [HIGH]
-3. **GAP-02** (#41) — No mu-plugins or drop-in file scanning [HIGH]
-4. **GAP-03** (#42) — No core file hash verification against wordpress.org checksums [HIGH]
-5. **GAP-04** (#43) — No network IOC extraction (URLs, domains, IPs from malicious code) [HIGH]
-6. **GAP-05** (#44) — No web server access log analysis (Apache/Nginx) [HIGH]
-7. **GAP-06** (#45) — No file entropy analysis for obfuscation detection [MEDIUM]
-8. **GAP-07** (#46) — No image/media polyglot detection beyond .ico files [MEDIUM]
-9. **GAP-08** (#47) — No user role/capability tampering detection [MEDIUM]
-10. **GAP-09** (#48) — No cron job callback analysis [MEDIUM]
-11. **GAP-10** (#49) — No file encoding anomaly detection (BOM, UTF-16, null bytes) [LOW]
-12. **GAP-11** (#50) — No delta/comparison scanning between two backups [MEDIUM]
-13. **GAP-12** (#51) — No plugin/theme file inventory comparison against wordpress.org [MEDIUM]
-14. **GAP-13** (#52) — No machine-readable (JSON) report output [LOW]
-15. **GAP-14** (#53) — No YARA rule support [LOW]
-16. **GAP-15** (#54) — No scan resumability after partial failure [LOW]
-17. **GAP-16** (#55) — No known malware hash database [MEDIUM]
-18. **GAP-17** (#56) — No remediation file manifest [MEDIUM]
-19. **GAP-18** (#57) — No `.user.ini` / `php.ini` auto_prepend_file scanning [MEDIUM]
+1. **GAP-01** (#40) — No JavaScript malware detection (skimmers, redirects, cryptominers) [HIGH]
+2. **GAP-02** (#41) — No mu-plugins or drop-in file scanning [HIGH]
+3. **GAP-03** (#42) — No core file hash verification against wordpress.org checksums [HIGH]
+4. **GAP-04** (#43) — No network IOC extraction (URLs, domains, IPs from malicious code) [HIGH]
+5. **GAP-05** (#44) — No web server access log analysis (Apache/Nginx) [HIGH]
+6. **GAP-06** (#45) — No file entropy analysis for obfuscation detection [MEDIUM]
+7. **GAP-07** (#46) — No image/media polyglot detection beyond .ico files [MEDIUM]
+8. **GAP-08** (#47) — No user role/capability tampering detection [MEDIUM]
+9. **GAP-09** (#48) — No cron job callback analysis [MEDIUM]
+10. **GAP-10** (#49) — No file encoding anomaly detection (BOM, UTF-16, null bytes) [LOW]
+11. **GAP-11** (#50) — No delta/comparison scanning between two backups [MEDIUM]
+12. **GAP-12** (#51) — No plugin/theme file inventory comparison against wordpress.org [MEDIUM]
+13. **GAP-13** (#52) — No machine-readable (JSON) report output [LOW]
+14. **GAP-14** (#53) — No YARA rule support [LOW]
+15. **GAP-15** (#54) — No scan resumability after partial failure [LOW]
+16. **GAP-16** (#55) — No known malware hash database [MEDIUM]
+17. **GAP-17** (#56) — No remediation file manifest [MEDIUM]
+18. **GAP-18** (#57) — No `.user.ini` / `php.ini` auto_prepend_file scanning [MEDIUM]
 
 ---
-
-### SEC-03 (#3): Backup Directory Contamination [MEDIUM]
-
-- **Status**: Pending
-- **Severity**: Medium
-- **Component**: `wp-incident-prescan.py`, `prompt.md`
-- **Description**: The scanner writes output directly into the scanned backup directory (`prescan-data/`, `scan-results/`, `wp-prescan-results.json`, `incident-scan-report.md`). This modifies timestamps and directory structure of forensic evidence. If the user accidentally points the tool at a live WordPress installation, these files would be web-accessible.
-- **Fix**: Write output to a separate directory outside the backup (e.g., `/tmp/wp-scan-{hash}/` or a user-specified output path).
 
 ### GAP-01 (#40): No JavaScript Malware Detection [HIGH]
 
