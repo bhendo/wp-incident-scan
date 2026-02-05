@@ -1,7 +1,9 @@
 """
 Main orchestration: discovery -> scans -> output.
 """
+from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -27,20 +29,49 @@ from prescan.utils import write_section
 from prescan.scanners.cve_lookup import lookup_plugin_cves, find_cves_for_core, load_or_refresh_cache
 
 
-def main():
-    if len(sys.argv) < 2:
-        print(f'Usage: {sys.argv[0]} /path/to/wordpress/backup', file=sys.stderr)
-        sys.exit(1)
+def parse_args(argv=None):
+    """Parse CLI arguments."""
+    parser = argparse.ArgumentParser(
+        description='WordPress backup pre-scanner for incident analysis.'
+    )
+    parser.add_argument('backup_path', help='Path to the WordPress backup directory')
+    parser.add_argument('--output-dir', dest='output_dir', default=None,
+                        help='Directory for scan output (default: {backup}-scan-output/)')
+    return parser.parse_args(argv)
 
-    backup_path = Path(sys.argv[1]).resolve()
+
+def resolve_output_dir(backup_path: Path, output_dir: str | None) -> Path:
+    """Resolve the output directory path.
+
+    Default: sibling directory named {backup_name}-scan-output/.
+    Override: explicit --output-dir value.
+    """
+    if output_dir:
+        return Path(output_dir).resolve()
+    return backup_path.parent / f'{backup_path.name}-scan-output'
+
+
+def main():
+    args = parse_args()
+
+    backup_path = Path(args.backup_path).resolve()
     if not backup_path.is_dir():
         print(f'Error: {backup_path} is not a directory', file=sys.stderr)
         sys.exit(1)
 
+    output_path = resolve_output_dir(backup_path, args.output_dir)
+    try:
+        output_path.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        print(f'Error: Cannot create output directory {output_path}: {e}', file=sys.stderr)
+        print(f'Use --output-dir to specify a writable location.', file=sys.stderr)
+        sys.exit(1)
+
     print(f'[*] Scanning backup at: {backup_path}', file=sys.stderr)
+    print(f'[*] Output directory: {output_path}', file=sys.stderr)
 
     # Create prescan-data directory for per-section output
-    data_dir = backup_path / 'prescan-data'
+    data_dir = output_path / 'prescan-data'
     data_dir.mkdir(exist_ok=True)
 
     # Discovery
@@ -207,7 +238,8 @@ def main():
     index = {
         '_meta': {
             'scan_time': datetime.now().isoformat(),
-            'backup_path': '.',
+            'backup_path': str(backup_path),
+            'output_dir': str(output_path),
             'wp_root': wp_root_rel,
             'sensitive_data_notice': (
                 'Output files may contain fragments of sensitive data in pattern matches '
@@ -240,7 +272,7 @@ def main():
         },
     }
 
-    out_path = backup_path / 'wp-prescan-results.json'
+    out_path = output_path / 'wp-prescan-results.json'
     with open(out_path, 'w') as f:
         json.dump(index, f, indent=2, default=str)
 
