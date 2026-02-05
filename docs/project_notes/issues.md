@@ -74,6 +74,11 @@ Track work completed on this skill. Completed issue details archived in `issues-
 - **Description**: Isolated scan output from backup directory. Added argparse with --output-dir flag, sibling directory default, {output_root} prompt convention. ADR-005 supersedes ADR-002.
 - **Resolved**: SEC-03 (#3)
 
+### 2026-02-05 - BUG-06: Replace Heredoc Chunking with Write + Concatenation (#70)
+
+- **Status**: Completed
+- **Description**: Replaced heredoc chunked writes with Write-to-chunk-files + single-line cat concatenation. Updated SKILL.md allowed-tools, preamble.md, phase-2/3/4 prompts, key_facts.md, bugs.md.
+
 ---
 
 ## Remaining Pending Issues

@@ -7,7 +7,7 @@ Launch the following sub-agents **all in parallel** using the Task tool (Agents 
 **CRITICAL — output budget**: Every sub-agent MUST follow the output budget rule from the preamble. Specifically:
 1. Use the Read tool to load its assigned `prescan-data/*.json` file
 2. Analyze the data
-3. Write findings to `{output_root}/scan-results/agent-{N}-{name}.md` — use Write if content is under 7,500 chars, otherwise use `cat >` / `cat >>` appends with `<<'SCANEOF'` delimiter, each chunk under 7,500 chars
+3. Write findings to `{output_root}/scan-results/agent-{N}-{name}.md` — use Write if content is under 7,500 chars, otherwise write each chunk to a numbered file (e.g., `agent-{N}-{name}.chunk-01.md`, `.chunk-02.md`) using the Write tool, each under 7,500 chars, then concatenate: `cat agent-{N}-{name}.chunk-*.md > agent-{N}-{name}.md`
 4. Return ONLY a one-line summary (e.g., "3 critical, 1 high, 2 info. Report: scan-results/agent-1-php-backdoors.md")
 
 Tell each agent the absolute path to both its input file and its output file.

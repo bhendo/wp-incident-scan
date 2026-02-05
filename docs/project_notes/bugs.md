@@ -55,6 +55,17 @@ Track bugs encountered and their solutions for future reference.
 - **Fix**: Added prescan CVE lookup module (`prescan/scanners/cve_lookup.py`) that fetches and caches the Wordfence vulnerability database locally (24h TTL). The prescan now outputs `prescan-data/plugin-cves.json` with real CVE data for all detected plugins, themes, and WP core. Phase 3 agents read CVE data from this file instead of relying on LLM knowledge. Prompts explicitly state "Do NOT fabricate or guess CVE IDs — use only the data provided from the prescan" and prohibit WebSearch for CVE lookups.
 - **Related**: BUG-02 (same class — LLM training knowledge used where external data is needed)
 
+### BUG-06: Heredoc chunked writes can't be auto-approved by allowed-tools glob patterns [HIGH]
+
+- **Date**: 2026-02-05
+- **Status**: Fixed (2026-02-05)
+- **Component**: `SKILL.md` (allowed-tools), `prompts/preamble.md`, `prompts/phase-2-analysis.md`, `prompts/phase-3-vulns.md`, `prompts/phase-4-report.md`
+- **Symptoms**: Every heredoc write command prompts the user for approval during a scan, even with glob patterns in `allowed-tools`. A full scan triggers dozens of approval prompts.
+- **Root cause**: The `allowed-tools` `Bash(pattern)` glob uses `*` which does not match newline characters. Heredoc commands are multi-line (the content is part of the command string), so no glob pattern can match them. Additionally, agents emit the file path directly as the command prefix (not `cat >>` as the prompts instruct).
+- **Impact**: Scan requires constant manual approval, defeating the purpose of skill-level tool permissions.
+- **Attempted fixes**: `Bash(*incident-scan-report.md* <<*)`, `Bash(*-scan-output/scan-results/* <<*)` — neither matches because `*` stops at `\n`.
+- **Fix**: Replaced heredoc chunking with Write-to-individual-chunk-files + single-line concatenation. Each chunk is written via the Write tool (already permitted) to numbered `.chunk-NN.md` files, then assembled with a single-line `cat` command that matches the `allowed-tools` glob pattern. Removed heredoc Bash patterns from `allowed-tools`, added two new single-line cat concat patterns. Updated all prompt files (preamble, phase-2, phase-3, phase-4) to use the new chunking approach.
+
 ### BUG-05: Email redaction removes actionable information from incident reports [MEDIUM]
 
 - **Date**: 2026-02-04

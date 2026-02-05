@@ -14,7 +14,7 @@ If no malware or suspicious findings were found in Phase 2, still proceed with v
 
 **Tool restriction — Phase 3**: WebSearch is NOT permitted for CVE lookups — use prescan data from `prescan-data/plugin-cves.json` instead. WebFetch is permitted ONLY for `wordpress.org` for plugin/theme metadata if needed. Do NOT fetch any other URLs.
 
-Launch the following agents. Remind each of the output budget rule: 7,500 char limit per Write call, use `cat >>` appends with `<<'SCANEOF'` if larger, structured tables not prose.
+Launch the following agents. Remind each of the output budget rule: 7,500 char limit per Write call, write to numbered `.chunk-NN.md` files if larger then concatenate, structured tables not prose.
 
 ### Agent 10: WordPress Core CVE Check
 
@@ -51,5 +51,5 @@ Instructions for each agent:
 
    **Entry Point** column: YES/NO + short phrase (max 10 words) linking to compromise evidence. This is the most important column.
    If a plugin has many CVEs, include only the 5 highest-CVSS entries.
-5. Write findings to the output file. Target: under 6,000 chars total for a 3-4 plugin batch. Use Write if under 7,500 chars, otherwise `cat >` / `cat >>` appends with `<<'SCANEOF'`.
+5. Write findings to the output file. Target: under 6,000 chars total for a 3-4 plugin batch. Use Write if under 7,500 chars, otherwise write to numbered `.chunk-NN.md` files and concatenate.
 6. **Do NOT fabricate or guess CVE IDs** — use only the data provided from the prescan. Do NOT use WebSearch for CVE lookups.

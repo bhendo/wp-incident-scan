@@ -1,7 +1,7 @@
 ---
 name: wp-incident-scan
 description: Scan a WordPress backup for malware, backdoors, and known vulnerabilities
-allowed-tools: Bash(python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py *), Bash(mkdir -p *-scan-output/scan-results), Bash(cat >> *-scan-output/scan-results/*), Read, Write, Edit, Glob, Grep, Task, WebSearch, WebFetch
+allowed-tools: Bash(python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py *), Bash(mkdir -p *-scan-output/scan-results), Bash(cat *-scan-output/scan-results/*.chunk-*.md > *-scan-output/scan-results/*.md), Bash(cat *-scan-output/scan-results/report.chunk-*.md > *-scan-output/incident-scan-report.md), Read, Write, Edit, Glob, Grep, Task, WebSearch, WebFetch
 argument-hint: /path/to/wordpress/backup
 disable-model-invocation: true
 ---

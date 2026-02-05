@@ -14,7 +14,8 @@ Project configuration and important reference information for the wp-incident-sc
 
 - `Bash(python3 ~/.claude/skills/wp-incident-scan/wp-incident-prescan.py *)` (prescan script only)
 - `Bash(mkdir -p *-scan-output/scan-results)` (output directory only)
-- `Bash(cat >> *-scan-output/scan-results/*)` (chunked appends to output only)
+- `Bash(cat *-scan-output/scan-results/*.chunk-*.md > *-scan-output/scan-results/*.md)` (agent chunk concatenation)
+- `Bash(cat *-scan-output/scan-results/report.chunk-*.md > *-scan-output/incident-scan-report.md)` (report concatenation)
 - `Read`, `Write`, `Edit`, `Glob`, `Grep`
 - `Task` (sub-agents use `subagent_type: "general-purpose"`)
 - `WebSearch` (Phase 1: WP version release date lookup)
@@ -23,7 +24,7 @@ Project configuration and important reference information for the wp-incident-sc
 ## Environment Constraints
 
 - **Bedrock max_output**: 4096 tokens per model response
-- **Output budget**: 7,500 chars max per Write tool call (safety margin below ~8K encoding limit). If larger, split across `cat >>` appends with `<<'SCANEOF'` delimiter, each chunk under 7,500 chars.
+- **Output budget**: 7,500 chars max per Write tool call (safety margin below ~8K encoding limit). If larger, write to numbered `.chunk-NN.md` files via Write tool, then concatenate with a single-line `cat` command (BUG-06).
 - Sub-agents must write full findings to files and return only one-line summaries
 - Sub-agents use structured tables (not prose) to stay within budget
 
@@ -33,7 +34,7 @@ Project configuration and important reference information for the wp-incident-sc
 - The orchestrator reads per-phase files from `prompts/` via the Read tool — this is **input context**, not system prompt
 - When launching sub-agents, the orchestrator **composes its own prompts** for Task tool calls — it paraphrases the instructions from the phase files, it does not copy-paste them verbatim
 - The modular `prompts/` structure means the orchestrator only loads the current phase's instructions, reducing input tokens by 60-90% per turn
-- The output limit is mitigated by the 7,500-char Write budget and chunked-write pattern (see BUG-01/PERF-01)
+- The output limit is mitigated by the 7,500-char Write budget and chunk-file + concatenation pattern (see BUG-01/PERF-01, BUG-06)
 - The pre-scanner runs as a Python process, not an LLM call — it has no token constraints
 
 ## Agent Dependencies
