@@ -18,7 +18,7 @@ Launch the following agents. Remind each of the output budget rule: 7,500 char l
 
 ### Agent 10: WordPress Core CVE Check
 
-**Output file**: `{backup_root}/scan-results/agent-10-wp-core-cves.md`
+**Output file**: `{output_root}/scan-results/agent-10-wp-core-cves.md`
 
 Instructions for agent (include the WP version and compromise evidence summary in the prompt):
 1. Read `prescan-data/plugin-cves.json` for core CVE data in the `core` section
@@ -34,7 +34,7 @@ Instructions for agent (include the WP version and compromise evidence summary i
 
 Batch plugins 3-4 per agent. Each agent receives: plugin slugs, installed versions, and the compromise evidence summary.
 
-**Output file**: `{backup_root}/scan-results/agent-11-plugin-cves-batch-{N}.md`
+**Output file**: `{output_root}/scan-results/agent-11-plugin-cves-batch-{N}.md`
 
 Instructions for each agent:
 1. Read `prescan-data/plugin-cves.json` for CVE data for your assigned plugins
